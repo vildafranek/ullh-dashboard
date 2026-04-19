@@ -8,13 +8,13 @@
   }
 
   function getTeam() {
-    const slug = qs('team') || CFG.teams[0].slug;
-    return CFG.teams.find((t) => t.slug === slug) || CFG.teams[0];
+    const slug = qs('team') || CFG.teamsOnly[0].slug;
+    return CFG.teamsOnly.find((t) => t.slug === slug) || CFG.teamsOnly[0];
   }
 
   function populateSelector(current) {
     const sel = document.getElementById('team-select');
-    sel.innerHTML = CFG.teams.map((t) => `<option value="${t.slug}" ${t.slug === current.slug ? 'selected' : ''}>${t.name}</option>`).join('');
+    sel.innerHTML = CFG.teamsOnly.map((t) => `<option value="${t.slug}" ${t.slug === current.slug ? 'selected' : ''}>${t.name}</option>`).join('');
     sel.addEventListener('change', (e) => {
       location.href = `teams.html?team=${e.target.value}`;
     });

@@ -20,7 +20,10 @@
 
   function populateFilters(posts) {
     const teamSel = document.getElementById('f-team');
-    teamSel.innerHTML = CFG.teams.map((t) => `<option value="${t.slug}">${t.name}</option>`).join('');
+    const teamsHtml = '<option value="">Všechny</option>'
+      + '<optgroup label="Týmy">' + CFG.teamsOnly.map((t) => `<option value="${t.slug}">${t.name}</option>`).join('') + '</optgroup>'
+      + '<optgroup label="Ligové a event účty">' + CFG.ligaOnly.map((t) => `<option value="${t.slug}">${t.name}</option>`).join('') + '</optgroup>';
+    teamSel.innerHTML = teamsHtml;
     const formats = [...new Set(posts.map((p) => p.format).filter(Boolean))];
     const fmtSel = document.getElementById('f-format');
     fmtSel.innerHTML = '<option value="">Vše</option>' + formats.map((f) => `<option value="${f}">${CFG.formatLabels[f] || f}</option>`).join('');
@@ -30,16 +33,12 @@
       document.getElementById('f-to').value = dates[dates.length - 1].toISOString().slice(0, 10);
     }
     const presetTeam = new URL(location.href).searchParams.get('team');
-    if (presetTeam) {
-      for (const opt of teamSel.options) if (opt.value === presetTeam) opt.selected = true;
-    }
+    if (presetTeam) teamSel.value = presetTeam;
   }
 
   function getFilters() {
-    const teamSel = document.getElementById('f-team');
-    const teams = Array.from(teamSel.selectedOptions).map((o) => o.value);
     return {
-      teams,
+      team: document.getElementById('f-team').value,
       platform: document.getElementById('f-platform').value,
       format: document.getElementById('f-format').value,
       from: document.getElementById('f-from').value ? new Date(document.getElementById('f-from').value) : null,
@@ -51,7 +50,7 @@
   function applyFilters() {
     const f = getFilters();
     state.filtered = state.allPosts.filter((p) => {
-      if (f.teams.length && !f.teams.includes(p.team)) return false;
+      if (f.team && p.team !== f.team) return false;
       if (f.platform && p.platform !== f.platform) return false;
       if (f.format && p.format !== f.format) return false;
       if (f.from && p.date < f.from) return false;
@@ -143,7 +142,7 @@
       });
       document.getElementById('btn-export').addEventListener('click', exportCsv);
       document.getElementById('btn-reset').addEventListener('click', () => {
-        document.getElementById('f-team').selectedIndex = -1;
+        document.getElementById('f-team').value = '';
         document.getElementById('f-platform').value = '';
         document.getElementById('f-format').value = '';
         document.getElementById('f-er').value = '0';

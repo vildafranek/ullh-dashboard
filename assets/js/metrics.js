@@ -18,20 +18,27 @@
   function formatNumber(n, opts = {}) {
     if (!Number.isFinite(n)) return '—';
     const abs = Math.abs(n);
-    if (opts.percent) return (n * 100).toFixed(opts.digits ?? 1) + '%';
+    if (opts.percent) {
+      const digits = opts.digits ?? 1;
+      return new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n * 100) + ' %';
+    }
     if (opts.compact && abs >= 1000) {
-      if (abs >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + ' M';
-      if (abs >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + ' k';
+      const nf = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 1 });
+      if (abs >= 1e6) return nf.format(n / 1e6) + ' M';
+      if (abs >= 1e3) return nf.format(n / 1e3) + ' k';
     }
     return new Intl.NumberFormat('cs-CZ').format(Math.round(n));
   }
 
   function formatDelta(n, asPercent = false) {
-    if (!Number.isFinite(n) || n === 0) return { text: '±0', klass: 'flat' };
-    const sign = n > 0 ? '+' : '';
+    if (!Number.isFinite(n) || n === 0) return { text: '→ 0', klass: 'flat', arrow: '→', raw: 0 };
+    const arrow = n > 0 ? '↑' : '↓';
     const klass = n > 0 ? 'up' : 'down';
-    const text = asPercent ? `${sign}${(n * 100).toFixed(1)}%` : `${sign}${formatNumber(n)}`;
-    return { text, klass };
+    const abs = Math.abs(n);
+    const num = asPercent
+      ? new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(abs * 100) + ' %'
+      : formatNumber(abs);
+    return { text: `${arrow} ${num}`, klass, arrow, raw: n };
   }
 
   function latestSubs(accounts, teamSlug, platformKey) {
@@ -121,6 +128,10 @@
     return posts.reduce((s, p) => s + (p.impressions || p.views || 0), 0);
   }
 
+  function sumViews(posts) {
+    return posts.reduce((s, p) => s + (p.views || 0), 0);
+  }
+
   function teamSnapshot(data, teamSlug, windowDays = 7) {
     const md = maxDate([...data.accounts, ...data.posts]);
     const from = addDays(md, -windowDays);
@@ -138,17 +149,20 @@
       postsDelta: windowPosts.length - prevPosts.length,
       engagement: sumEngagement(windowPosts),
       engagementPrev: sumEngagement(prevPosts),
+      views: sumViews(windowPosts),
+      viewsPrev: sumViews(prevPosts),
       er: avgEr(windowPosts),
       erPrev: avgEr(prevPosts),
     };
   }
 
-  function leagueLeaderboard(data, windowDays = 28) {
-    const teams = CFG.teams.map((t) => teamSnapshot(data, t.slug, windowDays));
-    const maxSubs = Math.max(1, ...teams.map((t) => t.subs));
-    const maxPosts = Math.max(1, ...teams.map((t) => t.posts));
-    const maxEr = Math.max(0.001, ...teams.map((t) => t.er));
-    for (const t of teams) {
+  function leaderboard(data, { kind = 'team', windowDays = 28 } = {}) {
+    const source = kind === 'liga' ? CFG.ligaOnly : (kind === 'all' ? CFG.teams : CFG.teamsOnly);
+    const rows = source.map((t) => teamSnapshot(data, t.slug, windowDays));
+    const maxSubs = Math.max(1, ...rows.map((t) => t.subs));
+    const maxPosts = Math.max(1, ...rows.map((t) => t.posts));
+    const maxEr = Math.max(0.001, ...rows.map((t) => t.er));
+    for (const t of rows) {
       const sizeScore = t.subs / maxSubs;
       const activityScore = t.posts / maxPosts;
       const engagementScore = t.er / maxEr;
@@ -157,67 +171,86 @@
       t.activityScore = activityScore;
       t.engagementScore = engagementScore;
     }
-    return teams.sort((a, b) => b.score - a.score);
+    return rows.sort((a, b) => b.score - a.score);
   }
 
-  function leagueTotals(data, windowDays = 7) {
+  function leagueLeaderboard(data, windowDays = 28) { return leaderboard(data, { kind: 'team', windowDays }); }
+
+  function leagueTotals(data, windowDays = 7, { kind = 'all' } = {}) {
     const md = maxDate([...data.accounts, ...data.posts]);
     const from = addDays(md, -windowDays);
     const prevFrom = addDays(md, -windowDays * 2);
 
-    const slugs = CFG.teams.map((t) => t.slug);
-    const subsNow = slugs.reduce((s, slug) => s + subsSumOnDay(data.accounts, slug, md), 0);
-    const subsPrev = slugs.reduce((s, slug) => s + subsSumOnDay(data.accounts, slug, from), 0);
+    const source = kind === 'liga' ? CFG.ligaOnly : (kind === 'team' ? CFG.teamsOnly : CFG.teams);
+    const slugs = new Set(source.map((t) => t.slug));
+    const subsNow = source.reduce((s, t) => s + subsSumOnDay(data.accounts, t.slug, md), 0);
+    const subsPrev = source.reduce((s, t) => s + subsSumOnDay(data.accounts, t.slug, from), 0);
 
-    const windowPosts = data.posts.filter((p) => p.team && p.date >= from && p.date <= md);
-    const prevPosts = data.posts.filter((p) => p.team && p.date >= prevFrom && p.date < from);
+    const windowPosts = data.posts.filter((p) => p.team && slugs.has(p.team) && p.date >= from && p.date <= md);
+    const prevPosts = data.posts.filter((p) => p.team && slugs.has(p.team) && p.date >= prevFrom && p.date < from);
 
     return {
       referenceDate: md,
       windowDays,
+      kind,
+      teamCount: source.length,
       subs: subsNow,
       subsDelta: subsNow - subsPrev,
       subsDeltaPct: subsPrev > 0 ? (subsNow - subsPrev) / subsPrev : 0,
       engagement: sumEngagement(windowPosts),
       engagementPrev: sumEngagement(prevPosts),
+      views: sumViews(windowPosts),
+      viewsPrev: sumViews(prevPosts),
       posts: windowPosts.length,
       postsPrev: prevPosts.length,
-      fastestGrowingTeam: leagueLeaderboard(data, windowDays)
-        .slice()
-        .sort((a, b) => b.subsDelta - a.subsDelta)[0],
+      fastestGrowing: leaderboard(data, { kind: kind === 'liga' ? 'liga' : 'team', windowDays })
+        .slice().sort((a, b) => b.subsDelta - a.subsDelta)[0],
     };
   }
 
   function weeklyTrendByTeam(data) {
-    const byTeamWeek = new Map();
+    const byTeamPlatformWeek = new Map();
+    const allWeeks = new Set();
     for (const r of data.accounts) {
       if (!r.team) continue;
-      const key = `${r.team}|${r.week}`;
-      const prev = byTeamWeek.get(key);
-      if (!prev || prev.date < r.date) byTeamWeek.set(key, r);
+      allWeeks.add(r.week);
+      const key = `${r.team}|${r.platformKey}|${r.carlAccountId}|${r.week}`;
+      const prev = byTeamPlatformWeek.get(key);
+      if (!prev || prev.date < r.date) byTeamPlatformWeek.set(key, r);
     }
-    const teamWeeks = new Map();
-    for (const [key, row] of byTeamWeek) {
-      const [team, week] = key.split('|');
-      if (!teamWeeks.has(team)) teamWeeks.set(team, new Map());
-      const accumulator = teamWeeks.get(team);
-      accumulator.set(week, (accumulator.get(week) || 0) + row.subs);
+    const sortedWeeks = [...allWeeks].sort();
+    const teamAccounts = new Map();
+    for (const [key, row] of byTeamPlatformWeek) {
+      const acctKey = `${row.team}|${row.platformKey}|${row.carlAccountId}`;
+      if (!teamAccounts.has(acctKey)) teamAccounts.set(acctKey, new Map());
+      teamAccounts.get(acctKey).set(row.week, row.subs);
     }
-    const weeks = new Set();
-    for (const m of teamWeeks.values()) for (const w of m.keys()) weeks.add(w);
-    const sortedWeeks = [...weeks].sort();
-    const result = { weeks: sortedWeeks, series: [] };
-    for (const team of CFG.teams) {
-      const series = sortedWeeks.map((w) => (teamWeeks.get(team.slug) || new Map()).get(w) ?? null);
-      result.series.push({ team, values: series });
+    const teamWeekSums = new Map();
+    for (const [acctKey, weekMap] of teamAccounts) {
+      const team = acctKey.split('|')[0];
+      if (!teamWeekSums.has(team)) teamWeekSums.set(team, new Map());
+      const teamMap = teamWeekSums.get(team);
+      let lastKnown = null;
+      for (const w of sortedWeeks) {
+        if (weekMap.has(w)) lastKnown = weekMap.get(w);
+        if (lastKnown !== null) teamMap.set(w, (teamMap.get(w) || 0) + lastKnown);
+      }
     }
-    return result;
+    const teams = CFG.teams.filter((t) => !t.kind || t.kind === 'team');
+    return {
+      weeks: sortedWeeks,
+      series: teams.map((team) => ({
+        team,
+        values: sortedWeeks.map((w) => (teamWeekSums.get(team.slug) || new Map()).get(w) ?? null),
+      })),
+    };
   }
 
-  function platformMixByTeam(data) {
+  function platformMixByTeam(data, { kind = 'team' } = {}) {
+    const source = kind === 'liga' ? CFG.ligaOnly : (kind === 'all' ? CFG.teams : CFG.teamsOnly);
     const platforms = ['ig', 'fb', 'tt', 'yt'];
     const rows = [];
-    for (const team of CFG.teams) {
+    for (const team of source) {
       const row = { team, total: 0 };
       for (const p of platforms) {
         const latest = latestSubs(data.accounts, team.slug, p);
@@ -324,11 +357,12 @@
     return result;
   }
 
-  function growthRanking(data, windowDays = 7) {
+  function growthRanking(data, windowDays = 7, { kind = 'team' } = {}) {
+    const source = kind === 'liga' ? CFG.ligaOnly : (kind === 'all' ? CFG.teams : CFG.teamsOnly);
     const md = maxDate(data.accounts);
     const from = addDays(md, -windowDays);
     const rows = [];
-    for (const team of CFG.teams) {
+    for (const team of source) {
       const now = subsSumOnDay(data.accounts, team.slug, md);
       const before = subsSumOnDay(data.accounts, team.slug, from);
       rows.push({ team, subs: now, delta: now - before, pct: before > 0 ? (now - before) / before : 0 });
@@ -339,8 +373,8 @@
   window.ULLHMetrics = {
     maxDate, addDays, formatNumber, formatDelta,
     latestSubs, subsByDate, currentSubsSumByTeam, subsSumOnDay, subsGrowth,
-    postsInWindow, avgEr, sumEngagement, sumImpressions,
-    teamSnapshot, leagueLeaderboard, leagueTotals,
+    postsInWindow, avgEr, sumEngagement, sumImpressions, sumViews,
+    teamSnapshot, leaderboard, leagueLeaderboard, leagueTotals,
     weeklyTrendByTeam, platformMixByTeam,
     bestPostingTimes, formatMix, topPosts,
     consistencyHeroes, captionLengthBuckets, growthRanking,
