@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ULLH Social Dashboard — Inspirace</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <div class="brand__mark">U</div>
+      <div>
+        <div class="brand__title">ULLH Social Dashboard</div>
+        <div class="brand__subtitle">Univerzitní liga ledního hokeje</div>
+      </div>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Přehled</a>
+      <a href="teams.html">Týmy</a>
+      <a href="posts.html">Posty</a>
+      <a href="inspiration.html" class="active">Inspirace</a>
+    </nav>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section class="hero">
+    <h1>Co replikovat</h1>
+    <p>Deterministické žebříčky nad daty + zabudované best practices ze studentského sport-marketingu. Žádné doporučení není AI-generated — každé pravidlo vychází z čísel, která vidíš.</p>
+  </section>
+
+  <section class="grid-2 stack">
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Top 10 postů (posledních 28 dní)</div>
+        <div class="panel__hint">Seřazeno podle engagement rate, min. dosah 100</div>
+      </div>
+      <div class="rule">Koukni, co zabírá u vítězů, a zkoušej to na svém týmu. <strong>Formát &middot; čas &middot; téma popisku</strong> jsou tři páky, kterými hneš engagement nejrychleji.</div>
+      <div id="top-posts-table"><div class="empty">Načítám…</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Žebříček růstu followerů</div>
+        <div class="panel__hint">Posledních 7 dní, napříč platformami</div>
+      </div>
+      <div class="rule">Srovnej, kdo nabírá absolutně (velké týmy) a procentuálně (malé týmy s dobře mířenými kampaněmi). Zacílená kampaň &gt; konstantní nízká aktivita.</div>
+      <div id="growth-table"><div class="empty">Načítám…</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Nejlepší časy publikace</div>
+        <div class="panel__hint">Heatmapa den × hodina × Ø ER (IG, FB, TT sloučeno; min 2 posty v buňce)</div>
+      </div>
+      <div class="rule" id="best-times-rule">—</div>
+      <div class="chart" id="times-heat"></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Vítězné formáty</div>
+        <div class="panel__hint">Průměrná ER podle formátu, per platforma</div>
+      </div>
+      <div class="rule" id="formats-rule">—</div>
+      <div class="grid-3" id="format-charts"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Consistency heroes</div>
+        <div class="panel__hint">Týmy s nejpravidelnější publikací (nízký CV mezer mezi posty)</div>
+      </div>
+      <div class="rule">Pravidelnost &gt; objem. Algoritmus sociálních sítí odměňuje team, co publikuje jako hodinky, i když jen 3× týdně. Nárazové série 10 postů za 2 dny po měsíci ticha ER sráží.</div>
+      <div id="consistency-table"><div class="empty">Načítám…</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Délka popisku vs ER</div>
+        <div class="panel__hint">Bucket podle počtu znaků, per platforma</div>
+      </div>
+      <div class="rule" id="caption-rule">—</div>
+      <div class="chart" id="caption-bars"></div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/metrics.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/inspiration.js"></script>
+</body>
+</html>

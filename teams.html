@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ULLH Social Dashboard — Týmy</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://docs.google.com" crossorigin>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <div class="brand__mark">U</div>
+      <div>
+        <div class="brand__title">ULLH Social Dashboard</div>
+        <div class="brand__subtitle">Univerzitní liga ledního hokeje</div>
+      </div>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Přehled</a>
+      <a href="teams.html" class="active">Týmy</a>
+      <a href="posts.html">Posty</a>
+      <a href="inspiration.html">Inspirace</a>
+    </nav>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section id="team-hero" class="team-hero">
+    <div class="team-logo lg" id="team-mark">—</div>
+    <div>
+      <h1 id="team-name">Vyber tým</h1>
+      <div class="team-meta" id="team-meta">—</div>
+    </div>
+    <div style="margin-left: auto">
+      <label class="filters" style="margin: 0">
+        <span>Tým</span>
+        <select id="team-select"></select>
+      </label>
+    </div>
+  </section>
+
+  <section class="kpi-grid" id="platform-cards"></section>
+
+  <section class="grid-2 stack">
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Vývoj followerů</div>
+        <div class="panel__hint">Po platformách, denní snapshoty</div>
+      </div>
+      <div class="chart tall" id="chart-subs"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Top posty týmu</div>
+        <div class="panel__hint">Top 10 dle engagement rate</div>
+      </div>
+      <div id="top-posts"><div class="empty">Načítám…</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Publikační aktivita (28 d)</div>
+        <div class="panel__hint">Počet postů po platformách a formátu</div>
+      </div>
+      <div class="chart" id="chart-activity"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div><a href="posts.html" id="all-posts-link">Zobrazit všechny posty tohoto týmu →</a></div>
+    <div>Data: <a href="https://docs.google.com/spreadsheets/d/1093SfGko3pFZ97vqceYAGPgoNiAIa5q3aSUPJnILH9k/" target="_blank" rel="noopener">Google Sheet</a></div>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/metrics.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/teams.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ULLH Social Dashboard — Přehled</title>
+<meta name="description" content="Manažerský přehled social media výkonu týmů Univerzitní ligy ledního hokeje.">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://docs.google.com" crossorigin>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <div class="brand__mark">U</div>
+      <div>
+        <div class="brand__title">ULLH Social Dashboard</div>
+        <div class="brand__subtitle">Univerzitní liga ledního hokeje</div>
+      </div>
+    </a>
+    <nav class="nav">
+      <a href="index.html" class="active">Přehled</a>
+      <a href="teams.html">Týmy</a>
+      <a href="posts.html">Posty</a>
+      <a href="inspiration.html">Inspirace</a>
+    </nav>
+    <div class="meta" id="meta"><span class="skeleton" style="width:160px; display:inline-block"></span></div>
+  </header>
+
+  <section class="hero">
+    <h1>Liga na první pohled</h1>
+    <p>Kde se naše týmy hýbou, rostou a kde spí. Okno: posledních 7 dní k datu posledního snapshotu v tabulce. Proklik na řádek týmu tě přepne do detailu.</p>
+  </section>
+
+  <section class="kpi-grid" id="kpi-grid"></section>
+
+  <section class="grid-2 stack">
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Ligový leaderboard</div>
+        <div class="panel__hint">Skóre = průměr normalizovaných dimenzí velikost × aktivita × engagement (28 d)</div>
+      </div>
+      <div id="leaderboard-wrap"><div class="skeleton" style="height: 240px"></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Platform mix (followers)</div>
+        <div class="panel__hint">Kde má který tým publikum</div>
+      </div>
+      <div class="chart" id="chart-platform-mix"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Aktivita × engagement (28 d)</div>
+        <div class="panel__hint">Tmavé = spí, jasné = publikuje a engaguje</div>
+      </div>
+      <div class="chart" id="chart-heatmap"></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Růst followerů po týdnech</div>
+        <div class="panel__hint">Sum přes všechny platformy týmu</div>
+      </div>
+      <div class="chart tall" id="chart-growth"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>Zdroj: Google Sheet &middot; <span id="fetched-at">—</span></div>
+    <div><a href="#" id="refresh">Přenačíst data</a></div>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/metrics.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/overview.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ULLH Social Dashboard — Posty</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <div class="brand__mark">U</div>
+      <div>
+        <div class="brand__title">ULLH Social Dashboard</div>
+        <div class="brand__subtitle">Univerzitní liga ledního hokeje</div>
+      </div>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Přehled</a>
+      <a href="teams.html">Týmy</a>
+      <a href="posts.html" class="active">Posty</a>
+      <a href="inspiration.html">Inspirace</a>
+    </nav>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section class="hero">
+    <h1>Všechny posty</h1>
+    <p>Filtrovatelná tabulka všech příspěvků z tabulky. Klikni na hlavičku pro seřazení, použij filtry pro zúžení, stáhni zobrazený výřez jako CSV.</p>
+  </section>
+
+  <div class="panel stack">
+    <div class="filters">
+      <label>Tým <select id="f-team" multiple size="4"></select></label>
+      <label>Platforma <select id="f-platform"><option value="">Vše</option><option value="ig">Instagram</option><option value="fb">Facebook</option><option value="tt">TikTok</option><option value="yt">YouTube</option></select></label>
+      <label>Formát <select id="f-format"><option value="">Vše</option></select></label>
+      <label>Od <input id="f-from" type="date"></label>
+      <label>Do <input id="f-to" type="date"></label>
+      <label>Min ER % <input id="f-er" type="number" step="0.1" min="0" value="0" style="width: 90px"></label>
+      <button class="btn" id="btn-export">Stáhnout CSV</button>
+      <button class="btn ghost" id="btn-reset">Reset</button>
+      <span id="filter-count" style="color: var(--silver); font-size: 12px"></span>
+    </div>
+    <div style="max-height: 620px; overflow: auto">
+      <table class="table" id="posts-table"></table>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top: 16px">
+    <div class="panel__head">
+      <div class="panel__title">Čas publikace × engagement rate</div>
+      <div class="panel__hint">Každý puntík = post. Barva = platforma.</div>
+    </div>
+    <div class="chart tall" id="scatter"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/metrics.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/posts.js"></script>
+</body>
+</html>
