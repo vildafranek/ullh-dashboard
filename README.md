@@ -59,6 +59,12 @@ python3 -m http.server 8000
 3. V **Settings → Pages** nastav `Deploy from branch: main / root`.
 4. Za ~1 min bude k dispozici na `https://<user>.github.io/ullh-dashboard/`.
 
+## Historizace (pro YoY srovnání)
+
+Od 20. 4. 2026 běží GitHub Action [`.github/workflows/daily-snapshot.yml`](.github/workflows/daily-snapshot.yml), která každý den v **7:00 CEST** stáhne obě CSV z publikovaného Sheetu a commitne je do `data/snapshots/YYYY-MM-DD/`. Po pár měsících tak budeme mít plnou historii mimo rolling window Supermetricsu a dashboard bude moci vykreslit YoY srovnání (až budou k dispozici ≥1 rok dat).
+
+Action lze spustit i ručně: GitHub → **Actions** → **Daily snapshot** → **Run workflow**.
+
 ## Známá omezení
 
 - **YouTube data chybí** — Supermetrics export v dodaném Sheetu YT neobsahuje. Sloupec "YouTube" je v UI zachován, ale zůstává prázdný, dokud se YT účty nepřidají do zdrojové tabulky.

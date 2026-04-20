@@ -54,16 +54,16 @@
       sub: `${subsPct.text} za ${totals.windowDays} d &middot; 11 týmů + 8 ligových účtů`,
     }));
     grid.appendChild(kpiCard({
-      label: 'Dosah (reach)',
+      label: 'Dosah (reach, 28 d)',
       value: M.formatNumber(totals.reach, { compact: true }),
       delta: reachDeltaPct,
-      sub: 'Unikátní účty zasažené obsahem &middot; poslední snapshot',
+      sub: 'Unikátní účty zasažené obsahem &middot; klouzavé okno 28 dní, poslední snapshot. Δ vs. stav před 7 dny.',
     }));
     grid.appendChild(kpiCard({
-      label: `Zhlédnutí ${totals.windowDays} d`,
+      label: `Zhlédnutí za ${totals.windowDays} dní`,
       value: M.formatNumber(totals.views, { compact: true }),
       delta: viewsDeltaPct,
-      sub: `Včetně stories (${M.formatNumber(totals.storiesViews, { compact: true })}) · týmy + ligové účty`,
+      sub: `Z toho stories ${totals.windowDays} d: ${M.formatNumber(totals.storiesViews, { compact: true })} · týmy + ligové účty`,
     }));
     grid.appendChild(kpiCard({
       label: `Engagement ${totals.windowDays} d`,
