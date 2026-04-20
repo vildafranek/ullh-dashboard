@@ -1,0 +1,53 @@
+name: Daily snapshot
+
+on:
+  schedule:
+    # 5:00 UTC = 7:00 CEST / 6:00 CET (runs every day)
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    # manual trigger available from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch CSV snapshots
+        env:
+          PUBLISH_ID: 2PACX-1vRfYZ7GQz-P3scyqXvzPaG1hr0n8dURLn5wgKmlj8CAqR8yM9ucXoYKhDZbiHdD6-0sLQ3M2fvRiEfE
+          ACCOUNT_GID: '1905041098'
+          POST_GID: '82127506'
+        run: |
+          set -e
+          DATE="$(date -u +%Y-%m-%d)"
+          DIR="data/snapshots/$DATE"
+          mkdir -p "$DIR"
+          BASE="https://docs.google.com/spreadsheets/d/e/$PUBLISH_ID/pub"
+          curl -sSLf "$BASE?output=csv&single=true&gid=$ACCOUNT_GID" -o "$DIR/account.csv"
+          curl -sSLf "$BASE?output=csv&single=true&gid=$POST_GID"    -o "$DIR/post.csv"
+          echo "Snapshot saved to $DIR:"
+          ls -la "$DIR"
+          echo "Row counts:"
+          wc -l "$DIR"/*.csv
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "ullh-snapshot-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No changes to commit (same data as previous snapshot)."
+          else
+            git commit -m "snapshot: $(date -u +%Y-%m-%d)"
+            git push
+          fi
