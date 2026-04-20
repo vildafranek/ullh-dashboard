@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ULLH Social Dashboard — Roční přehled</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <div class="brand__mark">U</div>
+      <div>
+        <div class="brand__title">ULLH Social Dashboard</div>
+        <div class="brand__subtitle">Univerzitní liga ledního hokeje</div>
+      </div>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Přehled</a>
+      <a href="teams.html">Týmy</a>
+      <a href="posts.html">Posty</a>
+      <a href="inspiration.html">Inspirace</a>
+      <a href="year.html" class="active">Rok</a>
+    </nav>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section class="hero">
+    <h1 id="year-title">Celoroční bilance</h1>
+    <p>High-level čísla za celé období datového záběru — pro prezentace partnerům a stakeholderům. Všechny metriky jsou kumulativní součty / poslední snapshoty.</p>
+  </section>
+
+  <section class="kpi-grid" id="year-kpis"></section>
+
+  <section class="grid-2 stack">
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Kumulativní růst publika</div>
+        <div class="panel__hint">Součet followerů napříč všemi účty v čase (týmy + ligové profily)</div>
+      </div>
+      <div class="chart tall" id="chart-cumulative"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Rozložení publika</div>
+        <div class="panel__hint">Kde máme diváky dnes</div>
+      </div>
+      <div class="chart" id="chart-audience-split"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Publikační objem</div>
+        <div class="panel__hint">Počet postů po měsících a platformách</div>
+      </div>
+      <div class="chart" id="chart-monthly-posts"></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Top 5 účtů podle velikosti publika</div>
+        <div class="panel__hint">Pro obchodní prezentace — naši největší hráči</div>
+      </div>
+      <div id="top-accounts"></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Nejsledovanější posty za celé období</div>
+        <div class="panel__hint">Top 10 podle počtu zhlédnutí</div>
+      </div>
+      <div id="top-year-posts"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>Datový záběr: <strong id="date-range">—</strong></div>
+    <div>Pro prezentační export použij screenshot + <a href="posts.html">Stáhnout CSV</a> na Postech.</div>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/metrics.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/year.js"></script>
+</body>
+</html>

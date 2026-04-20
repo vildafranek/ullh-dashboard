@@ -28,10 +28,7 @@
     ` });
   }
 
-  function teamBadge(team) {
-    const kindClass = team.kind === 'liga' ? ' liga' : '';
-    return `<span class="team-logo${kindClass}" style="background: linear-gradient(135deg, ${team.color}88, ${team.color})">${team.short}</span>`;
-  }
+  const teamBadge = window.ULLHUi.teamBadge;
 
   function renderKpis(totals) {
     const grid = document.getElementById('kpi-grid');
@@ -46,17 +43,27 @@
       : { text: '—', klass: 'flat' };
     const postsDelta = M.formatDelta(totals.posts - totals.postsPrev);
 
+    const reachDeltaPct = totals.reachPrev > 0
+      ? M.formatDelta((totals.reach - totals.reachPrev) / totals.reachPrev, true)
+      : { text: '—', klass: 'flat' };
+
     grid.appendChild(kpiCard({
       label: 'Celkem followers',
       value: M.formatNumber(totals.subs, { compact: true }),
       delta: subsDelta,
-      sub: `${subsPct.text} za ${totals.windowDays} d &middot; napříč 11 týmy + 8 lig. účtů`,
+      sub: `${subsPct.text} za ${totals.windowDays} d &middot; 11 týmů + 8 ligových účtů`,
+    }));
+    grid.appendChild(kpiCard({
+      label: 'Dosah (reach)',
+      value: M.formatNumber(totals.reach, { compact: true }),
+      delta: reachDeltaPct,
+      sub: 'Unikátní účty zasažené obsahem &middot; poslední snapshot',
     }));
     grid.appendChild(kpiCard({
       label: `Zhlédnutí ${totals.windowDays} d`,
       value: M.formatNumber(totals.views, { compact: true }),
       delta: viewsDeltaPct,
-      sub: 'Reels + videa + posty (Supermetrics views)',
+      sub: `Včetně stories (${M.formatNumber(totals.storiesViews, { compact: true })}) · týmy + ligové účty`,
     }));
     grid.appendChild(kpiCard({
       label: `Engagement ${totals.windowDays} d`,
@@ -73,7 +80,7 @@
     const fg = totals.fastestGrowing;
     grid.appendChild(kpiCard({
       label: 'Nejrychlejší růst',
-      value: fg && fg.team ? fg.team.short : '—',
+      value: fg && fg.team ? (fg.team.short || fg.team.name) : '—',
       sub: fg ? `${fg.team.name} &middot; ${M.formatDelta(fg.subsDelta).text} followers (${M.formatDelta(fg.subsDeltaPct, true).text})` : '',
     }));
   }
@@ -137,7 +144,9 @@
   }
 
   function renderCharts(data) {
-    C.platformMix(document.getElementById('chart-platform-mix'), M.platformMixByTeam(data, { kind: 'all' }));
+    C.platformMix(document.getElementById('chart-platform-mix'), M.platformMixByTeam(data, { kind: 'team' }));
+    const ligaMixEl = document.getElementById('chart-platform-mix-liga');
+    if (ligaMixEl) C.platformMix(ligaMixEl, M.platformMixByTeam(data, { kind: 'liga' }));
     C.teamActivityHeat(document.getElementById('chart-heatmap'), data);
     C.growthTrend(document.getElementById('chart-growth'), M.weeklyTrendByTeam(data));
   }

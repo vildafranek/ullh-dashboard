@@ -21,8 +21,14 @@
   }
 
   function renderHero(team, snapshot) {
-    document.getElementById('team-mark').style.background = `linear-gradient(135deg, ${team.color}88, ${team.color})`;
-    document.getElementById('team-mark').textContent = team.short;
+    const mark = document.getElementById('team-mark');
+    if (team.logo) {
+      mark.style.background = '#fff';
+      mark.innerHTML = `<img src="${team.logo}" alt="${team.name}" style="width:100%;height:100%;object-fit:contain;padding:6px">`;
+    } else {
+      mark.style.background = `linear-gradient(135deg, ${team.color}88, ${team.color})`;
+      mark.textContent = team.short;
+    }
     document.getElementById('team-name').textContent = team.name;
     const deltaPct = M.formatDelta(snapshot.subsDeltaPct, true);
     document.getElementById('team-meta').innerHTML = `

@@ -3,10 +3,7 @@
   const C = window.ULLHCharts;
   const CFG = window.ULLH_CONFIG;
 
-  function teamBadge(team) {
-    if (!team) return '—';
-    return `<span class="team-logo" style="background: linear-gradient(135deg, ${team.color}88, ${team.color})">${team.short}</span>`;
-  }
+  const teamBadge = window.ULLHUi.teamBadge;
 
   function renderTopPosts(data) {
     const top = M.topPosts(data.posts, { limit: 10, windowDays: 28, minImpressions: 100 });

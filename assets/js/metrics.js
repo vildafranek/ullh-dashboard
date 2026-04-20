@@ -132,6 +132,28 @@
     return posts.reduce((s, p) => s + (p.views || 0), 0);
   }
 
+  function reachLatestPerAccount(accounts, { kind = 'all', onDate = null } = {}) {
+    const source = kind === 'liga' ? CFG.ligaOnly : (kind === 'team' ? CFG.teamsOnly : CFG.teams);
+    const slugs = new Set(source.map((t) => t.slug));
+    const tKey = onDate ? onDate.toISOString().slice(0, 10) : null;
+    const byAccount = new Map();
+    for (const r of accounts) {
+      if (!r.team || !slugs.has(r.team)) continue;
+      if (tKey && r.day > tKey) continue;
+      if (!r.reach) continue;
+      const key = `${r.platformKey}|${r.carlAccountId}`;
+      const prev = byAccount.get(key);
+      if (!prev || prev.date < r.date) byAccount.set(key, r);
+    }
+    let sum = 0;
+    for (const r of byAccount.values()) sum += r.reach;
+    return sum;
+  }
+
+  function sumStoriesViews(posts) {
+    return posts.filter((p) => (p.postType || '').includes('Story')).reduce((s, p) => s + (p.views || 0), 0);
+  }
+
   function teamSnapshot(data, teamSlug, windowDays = 7) {
     const md = maxDate([...data.accounts, ...data.posts]);
     const from = addDays(md, -windowDays);
@@ -201,8 +223,11 @@
       engagementPrev: sumEngagement(prevPosts),
       views: sumViews(windowPosts),
       viewsPrev: sumViews(prevPosts),
+      storiesViews: sumStoriesViews(windowPosts),
       posts: windowPosts.length,
       postsPrev: prevPosts.length,
+      reach: reachLatestPerAccount(data.accounts, { kind, onDate: md }),
+      reachPrev: reachLatestPerAccount(data.accounts, { kind, onDate: from }),
       fastestGrowing: leaderboard(data, { kind: kind === 'liga' ? 'liga' : 'team', windowDays })
         .slice().sort((a, b) => b.subsDelta - a.subsDelta)[0],
     };
@@ -374,6 +399,7 @@
     maxDate, addDays, formatNumber, formatDelta,
     latestSubs, subsByDate, currentSubsSumByTeam, subsSumOnDay, subsGrowth,
     postsInWindow, avgEr, sumEngagement, sumImpressions, sumViews,
+    sumStoriesViews, reachLatestPerAccount,
     teamSnapshot, leaderboard, leagueLeaderboard, leagueTotals,
     weeklyTrendByTeam, platformMixByTeam,
     bestPostingTimes, formatMix, topPosts,
