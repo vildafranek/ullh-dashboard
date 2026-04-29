@@ -360,7 +360,8 @@
       "date": "2023-10-11T00:00:00",
       "year": 2023,
       "dow": "středa",
-      "startSec": 76504,      "endSec": 84630,
+      "startSec": 76504,
+      "endSec": 84630,
       "durationSec": 8126.0,
       "channel": "ČT sport",
       "episode": "Univerzitní hokejová liga 2023/24",
@@ -703,14 +704,15 @@
       "ratingZ15plus": 0.0003908705492035946,
       "rating000_Z15plus": 0.016739,
       "shareZ15plus": 0.0088740513143992,
-      "dRating000live": 0.2305,
+      "dRating000live": 0.0231,
       "viewsLive": 174
     },
     {
       "idx": 23,
       "date": "2024-08-14T00:00:00",
       "year": 2024,
-      "dow": "středa",      "startSec": 46771,
+      "dow": "středa",
+      "startSec": 46771,
       "endSec": 53140,
       "durationSec": 6369.0,
       "channel": "ČT sport",
@@ -956,7 +958,7 @@
       "shareM15plus": 0.6981400020641926,
       "reachZ15plus": 22.7968,
       "ratingZ15plus": 0.038838414642689355,
-      "rating000_Z15plus": 3.7259999999999995,
+      "rating000_Z15plus": 1.6632520000000002,
       "shareZ15plus": 0.08789161623381421,
       "dRating000live": 0.3632,
       "viewsLive": 3029
@@ -1060,7 +1062,8 @@
     {
       "idx": 34,
       "date": "2024-11-07T00:00:00",
-      "year": 2024,      "dow": "čtvrtek",
+      "year": 2024,
+      "dow": "čtvrtek",
       "startSec": 74102,
       "endSec": 84088,
       "durationSec": 9986.0,
@@ -1412,7 +1415,8 @@
       "idx": 45,
       "date": "2025-10-30T00:00:00",
       "year": 2025,
-      "dow": "čtvrtek",      "startSec": 73237,
+      "dow": "čtvrtek",
+      "startSec": 73237,
       "endSec": 84267,
       "durationSec": 11030.0,
       "channel": "ČT sport",
@@ -1755,7 +1759,8 @@
       "reachZ15plus": 12.5228,
       "ratingZ15plus": 0.11256603606929129,
       "rating000_Z15plus": 4.766315,
-      "shareZ15plus": 0.6119530665174917,      "dRating000live": 0.414,
+      "shareZ15plus": 0.6119530665174917,
+      "dRating000live": 0.414,
       "viewsLive": 2080
     },
     {
@@ -1823,7 +1828,7 @@
       "viewsLive": 73
     },
     {
-      "idx": "Celkem ",
+      "idx": "Celkem ",
       "date": null,
       "year": null,
       "dow": "PÚSČPSN",

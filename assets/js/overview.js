@@ -23,7 +23,7 @@
     const subHtml = sub ? `<div class="kpi__sub">${sub}</div>` : '';
     return el('div', { class: 'kpi', html: `
       <div class="kpi__label">${label}</div>
-      <div class="kpi__value">${value}${unit ? `<span class=\"kpi__unit\">${unit}</span>` : ''}</div>
+      <div class="kpi__value">${value}${unit ? `<span class="kpi__unit">${unit}</span>` : ''}</div>
       ${deltaHtml}${subHtml}
     ` });
   }

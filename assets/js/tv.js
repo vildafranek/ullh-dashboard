@@ -111,38 +111,73 @@
     const view = document.getElementById('tv-view').value;
     const prem = tv.records.filter((r) => r.premiera === 'premiéra');
     const repr = tv.records.filter((r) => r.premiera !== 'premiéra');
+
     const a = aggregateByYear(prem, metric, view);
     const b = aggregateByYear(repr, metric, view);
+    // unify years
     const years = [...new Set([...a.years, ...b.years])].sort();
-    const premSeries = years.map((y) => { const i = a.years.indexOf(y); return i >= 0 ? Number(a.series[i].toFixed(metric === 'count' ? 0 : 2)) : 0; });
-    const reprSeries = years.map((y) => { const i = b.years.indexOf(y); return i >= 0 ? Number(b.series[i].toFixed(metric === 'count' ? 0 : 2)) : 0; });
+    const premSeries = years.map((y) => {
+      const i = a.years.indexOf(y);
+      return i >= 0 ? Number(a.series[i].toFixed(metric === 'count' ? 0 : 2)) : 0;
+    });
+    const reprSeries = years.map((y) => {
+      const i = b.years.indexOf(y);
+      return i >= 0 ? Number(b.series[i].toFixed(metric === 'count' ? 0 : 2)) : 0;
+    });
+
     const isPercent = metric === 'share4plus';
     const yLabel = METRIC_LABELS[metric] + (view === 'avg' ? ' (Ø/přenos)' : view === 'max' ? ' (rekord)' : '');
+
     const stacked = metric === 'count' || (view === 'sum' && !isPercent);
+
     C.init(document.getElementById('chart-tv-yearly'), {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
       legend: { top: 0, itemWidth: 12, itemHeight: 8 },
       grid: { top: 36, left: 56, right: 16, bottom: 30 },
       xAxis: { type: 'category', data: years.map(String) },
-      yAxis: { type: 'value', name: yLabel, nameTextStyle: { color: '#6B7A99', fontSize: 11 }, axisLabel: { formatter: (v) => isPercent ? (v * 100).toFixed(1) + ' %' : new Intl.NumberFormat('cs-CZ').format(v) } },
+      yAxis: {
+        type: 'value', name: yLabel, nameTextStyle: { color: '#6B7A99', fontSize: 11 },
+        axisLabel: { formatter: (v) => isPercent ? (v * 100).toFixed(1) + ' %' : new Intl.NumberFormat('cs-CZ').format(v) },
+      },
       series: [
-        { name: 'Premiéra', type: 'bar', stack: stacked ? 'tv' : null, data: premSeries, itemStyle: { color: '#00D4FF', borderRadius: stacked ? 0 : [6,6,0,0] }, barMaxWidth: 44 },
-        { name: 'Repríza', type: 'bar', stack: stacked ? 'tv' : null, data: reprSeries, itemStyle: { color: '#2563EB', borderRadius: [6,6,0,0] }, barMaxWidth: 44 },
+        {
+          name: 'Premiéra', type: 'bar', stack: stacked ? 'tv' : null,
+          data: premSeries, itemStyle: { color: '#00D4FF', borderRadius: stacked ? 0 : [6,6,0,0] }, barMaxWidth: 44,
+        },
+        {
+          name: 'Repríza', type: 'bar', stack: stacked ? 'tv' : null,
+          data: reprSeries, itemStyle: { color: '#2563EB', borderRadius: stacked ? [6,6,0,0] : [6,6,0,0] }, barMaxWidth: 44,
+        },
       ],
     });
   }
 
   function renderTvTopTable(tv) {
-    const top = tv.records.filter((r) => r.premiera === 'premiéra' && r.reach4plus).slice().sort((a, b) => (b.reach4plus || 0) - (a.reach4plus || 0)).slice(0, 10);
+    const top = tv.records
+      .filter((r) => r.premiera === 'premiéra' && r.reach4plus)
+      .slice().sort((a, b) => (b.reach4plus || 0) - (a.reach4plus || 0))
+      .slice(0, 10);
     const container = document.getElementById('tv-top-table');
     if (!top.length) { container.innerHTML = '<div class="empty">Bez dat.</div>'; return; }
-    container.innerHTML = `<table class="table"><thead><tr><th>#</th><th>Datum</th><th>Den</th><th>Titul</th><th style="text-align:right">Reach 4+ (tis.)</th><th style="text-align:right">Rating 4+ (tis.)</th><th style="text-align:right">Share 4+</th><th style="text-align:right">Reach 15+ (tis.)</th></tr></thead><tbody>${top.map((r, i) => `<tr><td><strong>${i + 1}</strong></td><td>${dateFmt(r.date)}</td><td style="color: var(--silver)">${r.dow || ''}</td><td class="caption-cell">${(r.title || '').replace(/^Hokej:\s*/, '')}</td><td style="text-align:right"><strong>${fmt(r.reach4plus)}</strong></td><td style="text-align:right">${fmt(r.rating000_4plus)}</td><td style="text-align:right">${pct(r.share4plus, 1)}</td><td style="text-align:right">${fmt(r.reach15plus)}</td></tr>`).join('')}</tbody></table>`;
+    container.innerHTML = `<table class="table"><thead><tr>
+      <th>#</th><th>Datum</th><th>Den</th><th>Titul</th><th style="text-align:right">Reach 4+ (tis.)</th><th style="text-align:right">Rating 4+ (tis.)</th><th style="text-align:right">Share 4+</th><th style="text-align:right">Reach 15+ (tis.)</th>
+    </tr></thead><tbody>${top.map((r, i) => `<tr>
+      <td><strong>${i + 1}</strong></td>
+      <td>${dateFmt(r.date)}</td>
+      <td style="color: var(--silver)">${r.dow || ''}</td>
+      <td class="caption-cell">${(r.title || '').replace(/^Hokej:\s*/, '')}</td>
+      <td style="text-align:right"><strong>${fmt(r.reach4plus)}</strong></td>
+      <td style="text-align:right">${fmt(r.rating000_4plus)}</td>
+      <td style="text-align:right">${pct(r.share4plus, 1)}</td>
+      <td style="text-align:right">${fmt(r.reach15plus)}</td>
+    </tr>`).join('')}</tbody></table>`;
   }
 
   function renderPlusYearlyChart(plus) {
     const a = aggregateByYear(plus.records, 'count', 'sum');
     const b = aggregateByYear(plus.records, 'viewsLive', 'sum');
     const c = aggregateByYear(plus.records, 'watchedHours', 'sum');
+
     C.init(document.getElementById('chart-plus-yearly'), {
       tooltip: { trigger: 'axis' },
       legend: { top: 0, itemWidth: 12, itemHeight: 8 },
@@ -161,18 +196,40 @@
   }
 
   function renderPlusTopTable(plus) {
-    const top = plus.records.slice().sort((a, b) => (b.viewsLive || 0) - (a.viewsLive || 0)).slice(0, 10);
+    const top = plus.records.slice()
+      .sort((a, b) => (b.viewsLive || 0) - (a.viewsLive || 0))
+      .slice(0, 10);
     const container = document.getElementById('plus-top-table');
     if (!top.length) { container.innerHTML = '<div class="empty">Bez dat.</div>'; return; }
-    container.innerHTML = `<table class="table"><thead><tr><th>#</th><th>Rok</th><th>Datum</th><th>Zápas</th><th style="text-align:right">Views živě</th><th style="text-align:right">Sledov. hodin</th><th style="text-align:right">Délka přenosu</th></tr></thead><tbody>${top.map((r, i) => { const cleanTitle = (r.title || '').replace(/^Univerzitní hokejová liga[:\s-]*/i, '').replace(/^Hokej[:\s-]*/i, '').replace(/\(hokej\/ULLH\)\s*$/i, '').trim(); return `<tr><td><strong>${i + 1}</strong></td><td>${r.year}</td><td>${r.rawDate || ''}</td><td class="caption-cell">${cleanTitle}</td><td style="text-align:right"><strong>${fmt(r.viewsLive)}</strong></td><td style="text-align:right">${r.watchedHours ? fmt(r.watchedHours) + ' h' : '—'}</td><td style="text-align:right">${r.durationMin ? r.durationMin + ' min' : '—'}</td></tr>`; }).join('')}</tbody></table>`;
+    container.innerHTML = `<table class="table"><thead><tr>
+      <th>#</th><th>Rok</th><th>Datum</th><th>Zápas</th><th style="text-align:right">Views živě</th><th style="text-align:right">Sledov. hodin</th><th style="text-align:right">Délka přenosu</th>
+    </tr></thead><tbody>${top.map((r, i) => {
+      const cleanTitle = (r.title || '').replace(/^Univerzitní hokejová liga[:\s-]*/i, '').replace(/^Hokej[:\s-]*/i, '').replace(/\(hokej\/ULLH\)\s*$/i, '').trim();
+      return `<tr>
+        <td><strong>${i + 1}</strong></td>
+        <td>${r.year}</td>
+        <td>${r.rawDate || ''}</td>
+        <td class="caption-cell">${cleanTitle}</td>
+        <td style="text-align:right"><strong>${fmt(r.viewsLive)}</strong></td>
+        <td style="text-align:right">${r.watchedHours ? fmt(r.watchedHours) + ' h' : '—'}</td>
+        <td style="text-align:right">${r.durationMin ? r.durationMin + ' min' : '—'}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
   }
 
   function renderCrossChart({ tv, plus }) {
     const tvByYear = aggregateByYear(tv.records.filter((r) => r.premiera === 'premiéra'), 'reach4plus', 'sum');
     const plusByYear = aggregateByYear(plus.records, 'viewsLive', 'sum');
     const allYears = [...new Set([...tvByYear.years, ...plusByYear.years])].sort();
-    const tvSeries = allYears.map((y) => { const i = tvByYear.years.indexOf(y); return i >= 0 ? Math.round(tvByYear.series[i] * 1000) : null; });
-    const plusSeries = allYears.map((y) => { const i = plusByYear.years.indexOf(y); return i >= 0 ? Math.round(plusByYear.series[i]) : null; });
+    const tvSeries = allYears.map((y) => {
+      const i = tvByYear.years.indexOf(y);
+      return i >= 0 ? Math.round(tvByYear.series[i] * 1000) : null;
+    });
+    const plusSeries = allYears.map((y) => {
+      const i = plusByYear.years.indexOf(y);
+      return i >= 0 ? Math.round(plusByYear.series[i]) : null;
+    });
+
     C.init(document.getElementById('chart-cross'), {
       tooltip: { trigger: 'axis' },
       legend: { top: 0, itemWidth: 12, itemHeight: 8 },
@@ -205,6 +262,7 @@
       renderPlusYearlyChart(data.plus);
       renderPlusTopTable(data.plus);
       renderCrossChart(data);
+
       document.getElementById('tv-metric').addEventListener('change', () => renderTvYearlyChart(data.tv));
       document.getElementById('tv-view').addEventListener('change', () => renderTvYearlyChart(data.tv));
     } catch (err) {
