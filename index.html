@@ -41,7 +41,14 @@
     <div class="panel" style="grid-column: 1 / -1">
       <div class="panel__head">
         <div class="panel__title">Ligový leaderboard &mdash; týmy</div>
-        <div class="panel__hint">Skóre = průměr normalizovaných dimenzí velikost × aktivita × engagement (28 d). Klikni na řádek → detail týmu.</div>
+        <div class="panel__hint">Klikni na hlavičku sloupce pro řazení &middot; klikni na řádek pro detail týmu</div>
+      </div>
+      <div class="filters" id="score-variant" style="margin-bottom: 12px">
+        <span style="color: var(--silver); font-size: 12px">Skóre:</span>
+        <button class="platform-btn active" data-variant="composite" title="Průměr velikosti, aktivity a engagementu">Složené</button>
+        <button class="platform-btn" data-variant="strength" title="Velikost (60 %) + engagement (40 %) — kdo má silné sociální sítě celkově">Síla účtu</button>
+        <button class="platform-btn" data-variant="current" title="Aktivita + engagement + růst — kdo teď odvádí nejlepší práci">Aktuální výkon</button>
+        <span id="score-variant-info" style="margin-left: auto; color: var(--muted); font-size: 11px">Sloupec „Skóre" zobrazuje vybranou variantu. Hodnoty 0–100 normalizované v rámci ligy.</span>
       </div>
       <div id="leaderboard-wrap"><div class="skeleton" style="height: 240px"></div></div>
     </div>

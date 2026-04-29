@@ -194,20 +194,25 @@
     };
   }
 
-  function leaderboard(data, { kind = 'team', windowDays = 28 } = {}) {
+  function leaderboard(data, { kind = 'team', windowDays = 28, scoreVariant = 'composite' } = {}) {
     const source = kind === 'liga' ? CFG.ligaOnly : (kind === 'all' ? CFG.teams : CFG.teamsOnly);
     const rows = source.map((t) => teamSnapshot(data, t.slug, windowDays));
     const maxSubs = Math.max(1, ...rows.map((t) => t.subs));
     const maxPosts = Math.max(1, ...rows.map((t) => t.posts));
     const maxEr = Math.max(0.001, ...rows.map((t) => t.er));
+    const maxGrowthAbs = Math.max(1, ...rows.map((t) => Math.abs(t.subsDelta)));
     for (const t of rows) {
-      const sizeScore = t.subs / maxSubs;
-      const activityScore = t.posts / maxPosts;
-      const engagementScore = t.er / maxEr;
-      t.score = (sizeScore + activityScore + engagementScore) / 3;
-      t.sizeScore = sizeScore;
-      t.activityScore = activityScore;
-      t.engagementScore = engagementScore;
+      t.sizeScore = t.subs / maxSubs;
+      t.activityScore = t.posts / maxPosts;
+      t.engagementScore = t.er / maxEr;
+      t.growthScore = Math.max(0, t.subsDelta) / maxGrowthAbs;
+      // 3 varianty:
+      t.scoreComposite = (t.sizeScore + t.activityScore + t.engagementScore) / 3;
+      t.scoreStrength = (t.sizeScore * 0.6 + t.engagementScore * 0.4); // velikost + engagement
+      t.scoreCurrent = (t.activityScore + t.engagementScore + t.growthScore) / 3; // aktuální výkon
+      t.score = scoreVariant === 'strength' ? t.scoreStrength
+        : scoreVariant === 'current' ? t.scoreCurrent
+        : t.scoreComposite;
     }
     return rows.sort((a, b) => b.score - a.score);
   }

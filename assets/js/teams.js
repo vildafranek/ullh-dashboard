@@ -294,6 +294,117 @@
     });
   }
 
+  function renderPie() {
+    const el = document.getElementById('chart-pie');
+    if (!el) return;
+    const entries = Object.entries(CFG.platforms).sort((a, b) => a[1].order - b[1].order);
+    const data = entries.map(([_, meta]) => {
+      const latest = M.latestSubs(state.data.accounts, state.team.slug, meta.key);
+      return { name: meta.label, value: latest ? latest.subs : 0, color: meta.color };
+    });
+    if (!data.some((d) => d.value > 0)) {
+      el.innerHTML = '<div class="empty">Tým nemá followers v datech.</div>';
+      return;
+    }
+    C.platformPie(el, data);
+  }
+
+  function renderInspire() {
+    const container = document.getElementById('inspire-content');
+    if (!container) return;
+    const mode = (document.querySelector('#inspire-mode .platform-btn.active') || {}).dataset?.mode || 'similar-size';
+    const team = state.team;
+    const md = M.maxDate(state.data.accounts);
+
+    // Compute current team subs total
+    const myTotal = CFG.teamsOnly.reduce((acc, t) => {
+      if (t.slug !== team.slug) return acc;
+      return Object.values(CFG.platforms).reduce((s, p) => {
+        const r = M.latestSubs(state.data.accounts, t.slug, p.key);
+        return s + (r ? r.subs : 0);
+      }, 0);
+    }, 0);
+
+    // Compute total subs + activity (posts last 28 d) for all teams
+    const from28 = M.addDays(md, -28);
+    const teamStats = CFG.teamsOnly.map((t) => {
+      const total = Object.values(CFG.platforms).reduce((s, p) => {
+        const r = M.latestSubs(state.data.accounts, t.slug, p.key);
+        return s + (r ? r.subs : 0);
+      }, 0);
+      const posts = state.data.posts.filter((p) => p.team === t.slug && p.date >= from28).length;
+      return { team: t, total, posts };
+    });
+
+    let candidates = [];
+    if (mode === 'similar-size') {
+      const others = teamStats.filter((x) => x.team.slug !== team.slug);
+      candidates = others.slice().sort((a, b) => Math.abs(a.total - myTotal) - Math.abs(b.total - myTotal)).slice(0, 3);
+    } else if (mode === 'similar-activity') {
+      const myPosts = teamStats.find((x) => x.team.slug === team.slug)?.posts || 0;
+      const others = teamStats.filter((x) => x.team.slug !== team.slug);
+      candidates = others.slice().sort((a, b) => Math.abs(a.posts - myPosts) - Math.abs(b.posts - myPosts)).slice(0, 3);
+    } else if (mode === 'top') {
+      const lb = M.leaderboard(state.data, { kind: 'team', windowDays: 28 });
+      candidates = lb.filter((r) => r.team.slug !== team.slug).slice(0, 3).map((r) => {
+        const ts = teamStats.find((x) => x.team.slug === r.team.slug);
+        return ts || { team: r.team, total: r.subs, posts: r.posts };
+      });
+    }
+
+    if (!candidates.length) {
+      container.innerHTML = '<div class="empty">Nedostatek dat pro inspiraci.</div>';
+      return;
+    }
+
+    // Get top 1 post (by ER) per candidate team in last 60 days
+    const from60 = M.addDays(md, -60);
+    const candidateBlocks = candidates.map(({ team: cand, total, posts }) => {
+      const candPosts = state.data.posts.filter((p) => p.team === cand.slug && p.date >= from60 && (p.impressions >= 50 || p.views >= 50));
+      const topPost = candPosts.slice().sort((a, b) => b.er - a.er)[0];
+      const formatLabel = topPost ? (CFG.formatLabels[topPost.format] || topPost.format || '—') : '—';
+      const platformLabel = topPost ? (Object.values(CFG.platforms).find(x => x.key === topPost.platform)?.label || topPost.platform) : '';
+      const dt = topPost ? new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(topPost.date) : '';
+      const dow = topPost ? ['ne','po','út','st','čt','pá','so'][topPost.date.getDay()] : '';
+      const hour = topPost ? `${topPost.date.getHours()}:${String(topPost.date.getMinutes()).padStart(2,'0')}` : '';
+      const teamLogo = (window.ULLHUi && window.ULLHUi.teamBadge) ? window.ULLHUi.teamBadge(cand) : `<span class="team-logo" style="background: linear-gradient(135deg, ${cand.color}88, ${cand.color})">${cand.short}</span>`;
+      return `
+        <div style="border: 1px solid var(--card-border); border-radius: 10px; padding: 12px; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            ${teamLogo}
+            <strong>${cand.name}</strong>
+            <span style="margin-left: auto; color: var(--silver); font-size: 12px">${M.formatNumber(total, { compact: true })} followers · ${posts} postů 28 d</span>
+          </div>
+          ${topPost ? `
+            <div style="font-size: 12px; color: var(--silver); margin-bottom: 6px">
+              Nejlepší post (60 d): <span class="badge ${topPost.platform}">${platformLabel}</span>
+              · ${formatLabel} · ${dow} ${dt} ${hour} · <strong style="color: var(--cyan)">ER ${(topPost.er * 100).toFixed(2)}%</strong>
+            </div>
+            <div class="caption-cell" style="font-size: 12px; max-width: 100%">
+              <a href="${topPost.permalink}" target="_blank" rel="noopener">${(topPost.caption || '(bez popisku)').slice(0, 140).replace(/</g,'&lt;')}</a>
+            </div>
+          ` : `<div style="font-size: 12px; color: var(--muted)">Žádný kvalifikovaný post v posledních 60 dnech.</div>`}
+        </div>`;
+    }).join('');
+
+    const intro = {
+      'similar-size': 'Týmy s nejpodobnější velikostí publika — co u nich teď zabíralo:',
+      'similar-activity': 'Týmy s podobným tempem publikace — jejich top obsah:',
+      'top': 'Top 3 týmy ligy (podle skóre 28 d) — jejich top obsah:',
+    }[mode];
+
+    container.innerHTML = `<div style="font-size: 12px; color: var(--silver); margin-bottom: 10px">${intro}</div>${candidateBlocks}`;
+  }
+
+  function setupInspireControls() {
+    const buttons = document.querySelectorAll('#inspire-mode .platform-btn');
+    buttons.forEach((b) => b.addEventListener('click', () => {
+      buttons.forEach((x) => x.classList.remove('active'));
+      b.classList.add('active');
+      renderInspire();
+    }));
+  }
+
   function renderActivityChart() {
     const { from, to } = getPeriodRange();
     const posts = state.data.posts.filter((p) => p.team === state.team.slug && p.date >= from && p.date <= to);
@@ -330,6 +441,8 @@
     renderFollowerCharts();
     renderTopPosts();
     renderActivityChart();
+    renderPie();
+    renderInspire();
   }
 
   function csvDownload(rows, filename) {
@@ -431,6 +544,7 @@
       document.getElementById('period-to').max = md.toISOString().slice(0, 10);
       setupPeriodControls();
       setupPlatformControls();
+      setupInspireControls();
       document.getElementById('export-posts').addEventListener('click', exportPosts);
       document.getElementById('export-summary').addEventListener('click', exportSummary);
       rerenderAll();

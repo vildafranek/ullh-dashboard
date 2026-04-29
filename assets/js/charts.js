@@ -274,8 +274,37 @@
     });
   }
 
+  function platformPie(el, data) {
+    // data: [{name, value, color}]
+    const filtered = data.filter((d) => d.value > 0);
+    return init(el, {
+      tooltip: {
+        trigger: 'item',
+        formatter: (p) => `${p.marker} ${p.name}: <b>${new Intl.NumberFormat('cs-CZ').format(p.value)}</b> (${p.percent}%)`,
+      },
+      legend: { top: 'bottom', textStyle: { color: '#9CA3AF', fontSize: 11 }, itemWidth: 12, itemHeight: 8 },
+      series: [{
+        type: 'pie',
+        radius: ['45%', '70%'],
+        center: ['50%', '45%'],
+        avoidLabelOverlap: true,
+        label: {
+          show: true,
+          color: '#FFFFFF',
+          fontSize: 11,
+          formatter: (p) => `${p.name}\n${(p.percent || 0).toFixed(0)}%`,
+        },
+        labelLine: { length: 8, length2: 6, lineStyle: { color: 'rgba(156,163,175,0.4)' } },
+        data: filtered.map((d) => ({ name: d.name, value: d.value, itemStyle: { color: d.color } })),
+        emphasis: {
+          itemStyle: { borderColor: 'rgba(0,212,255,0.5)', borderWidth: 2, shadowBlur: 10, shadowColor: 'rgba(0,212,255,0.4)' },
+        },
+      }],
+    });
+  }
+
   window.ULLHCharts = {
-    init, growthTrend, platformMix, teamActivityHeat,
+    init, growthTrend, platformMix, platformPie, teamActivityHeat,
     bestTimesHeat, formatBars, scatterTimeEr, captionLengthBars, teamSubsTrend,
   };
 })();

@@ -89,6 +89,27 @@
       <div class="chart" id="chart-activity"></div>
     </div>
 
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Rozložení publika</div>
+        <div class="panel__hint">Followers napříč platformami (poslední snapshot)</div>
+      </div>
+      <div class="chart" id="chart-pie"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <div class="panel__title">Co můžeš replikovat</div>
+        <div class="panel__hint">Inspirace ze srovnatelných týmů a top postů ligy</div>
+      </div>
+      <div class="filters" id="inspire-mode" style="margin-bottom: 12px">
+        <button class="platform-btn active" data-mode="similar-size">Podobně velké týmy</button>
+        <button class="platform-btn" data-mode="similar-activity">Podobně aktivní</button>
+        <button class="platform-btn" data-mode="top">Top týmy ligy</button>
+      </div>
+      <div id="inspire-content"><div class="empty">Načítám…</div></div>
+    </div>
+
     <div class="panel" style="grid-column: 1 / -1">
       <div class="panel__head">
         <div class="panel__title">Vývoj followerů — po platformách (dynamická Y osa)</div>

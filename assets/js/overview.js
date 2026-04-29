@@ -100,7 +100,10 @@
       { key: 'er',        label: 'Ø ER',       align: 'right', sortable: true, get: (r) => r.er,          cell: (r) => M.formatNumber(r.er, { percent: true, digits: 2 }) },
     ];
     if (showScore) {
-      columns.push({ key: 'score', label: 'Skóre', align: 'right', sortable: true, get: (r) => r.score, cell: (r) => `<strong title="Velikost ${(r.sizeScore*100).toFixed(0)} · Aktivita ${(r.activityScore*100).toFixed(0)} · Engagement ${(r.engagementScore*100).toFixed(0)} (klikni Skóre pro řazení)">${(r.score * 100).toFixed(0)}</strong>` });
+      columns.push({ key: 'score', label: 'Skóre', align: 'right', sortable: true, get: (r) => r.score, cell: (r) => {
+        const tip = `Velikost ${(r.sizeScore*100).toFixed(0)} · Aktivita ${(r.activityScore*100).toFixed(0)} · Engagement ${(r.engagementScore*100).toFixed(0)} · Růst ${(r.growthScore*100).toFixed(0)} | Složené ${(r.scoreComposite*100).toFixed(0)} · Síla ${(r.scoreStrength*100).toFixed(0)} · Aktuální ${(r.scoreCurrent*100).toFixed(0)}`;
+        return `<strong title="${tip}">${(r.score * 100).toFixed(0)}</strong>`;
+      } });
     }
 
     const stateKey = wrapEl || rows;
@@ -161,19 +164,39 @@
     return table;
   }
 
+  let currentScoreVariant = 'composite';
+  let cachedData = null;
+
   function renderLeaderboards(data) {
-    const rowsTeam = M.leaderboard(data, { kind: 'team', windowDays: 28 });
+    cachedData = data;
+    const rowsTeam = M.leaderboard(data, { kind: 'team', windowDays: 28, scoreVariant: currentScoreVariant });
     const wrapT = document.getElementById('leaderboard-wrap');
     wrapT.innerHTML = '';
     wrapT.appendChild(leaderboardTable(rowsTeam, { showScore: true, wrapEl: wrapT }));
 
-    const rowsLiga = M.leaderboard(data, { kind: 'liga', windowDays: 28 });
+    const rowsLiga = M.leaderboard(data, { kind: 'liga', windowDays: 28, scoreVariant: currentScoreVariant });
     const wrapL = document.getElementById('liga-wrap');
     if (wrapL) {
       wrapL.innerHTML = '';
       if (rowsLiga.length) wrapL.appendChild(leaderboardTable(rowsLiga, { showScore: false, wrapEl: wrapL }));
       else wrapL.innerHTML = '<div class="empty">Žádná data pro ligové/event stránky.</div>';
     }
+  }
+
+  function setupScoreVariant() {
+    const buttons = document.querySelectorAll('#score-variant .platform-btn');
+    if (!buttons.length) return;
+    buttons.forEach((b) => b.addEventListener('click', () => {
+      buttons.forEach((x) => x.classList.remove('active'));
+      b.classList.add('active');
+      currentScoreVariant = b.dataset.variant;
+      // Reset sort state for both leaderboards (now want default by new score)
+      const wrapT = document.getElementById('leaderboard-wrap');
+      const wrapL = document.getElementById('liga-wrap');
+      sortStates.delete(wrapT);
+      sortStates.delete(wrapL);
+      if (cachedData) renderLeaderboards(cachedData);
+    }));
   }
 
   function renderCharts(data) {
@@ -209,6 +232,7 @@
       renderMeta(data);
       renderKpis(M.leagueTotals(data, 7, { kind: 'all' }));
       renderLeaderboards(data);
+      setupScoreVariant();
       renderCharts(data);
     } catch (err) {
       console.error(err);
