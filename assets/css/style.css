@@ -248,9 +248,13 @@ body::before {
   border-bottom: 1px solid rgba(0, 212, 255, 0.05);
   font-variant-numeric: tabular-nums;
 }
-.leaderboard tr { cursor: pointer; transition: background .15s ease; }
-.leaderboard tr:hover { background: rgba(0, 212, 255, 0.04); }
-.leaderboard tr.top1 td { color: var(--cyan); font-weight: 700; }
+.leaderboard tbody tr { transition: background .15s ease; }
+.leaderboard tbody tr:hover { background: rgba(0, 212, 255, 0.04); }
+.leaderboard tbody tr.top1 td { color: var(--cyan); font-weight: 700; }
+.leaderboard th.sortable { cursor: pointer; user-select: none; }
+.leaderboard th.sortable:hover { color: var(--cyan); }
+.leaderboard th.sorted-asc::after { content: ' ▲'; color: var(--cyan); font-size: 9px; }
+.leaderboard th.sorted-desc::after { content: ' ▼'; color: var(--cyan); font-size: 9px; }
 .leaderboard .rank {
   display: inline-block;
   min-width: 24px;
@@ -337,8 +341,10 @@ td, .leaderboard td, .table td { font-family: ui-sans-serif, -apple-system, Blin
   user-select: none;
 }
 .table th:hover { color: var(--cyan); }
-.table th.sorted-asc::after { content: ' ▲'; color: var(--cyan); }
-.table th.sorted-desc::after { content: ' ▼'; color: var(--cyan); }
+.table th.sorted-asc::after { content: ' ▲'; color: var(--cyan); font-size: 9px; }
+.table th.sorted-desc::after { content: ' ▼'; color: var(--cyan); font-size: 9px; }
+.table th.sortable { cursor: pointer; user-select: none; }
+.table th.sortable:hover { color: var(--cyan); }
 .table td {
   padding: 10px 8px;
   border-bottom: 1px solid rgba(0, 212, 255, 0.05);
@@ -353,6 +359,27 @@ td, .leaderboard td, .table td { font-family: ui-sans-serif, -apple-system, Blin
 }
 .table a { color: var(--cyan); text-decoration: none; }
 .table a:hover { text-decoration: underline; }
+
+/* Period / platform pill buttons */
+.period-btn, .platform-btn {
+  background: rgba(10, 30, 66, 0.6);
+  border: 1px solid var(--card-border);
+  color: var(--silver);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.period-btn:hover, .platform-btn:hover { color: var(--white); border-color: var(--card-border-hover); }
+.period-btn.active, .platform-btn.active {
+  background: var(--cyan);
+  color: var(--navy);
+  border-color: var(--cyan);
+  font-weight: 600;
+}
 
 /* Filters */
 .filters {

@@ -55,7 +55,14 @@
     <div class="panel">
       <div class="panel__head">
         <div class="panel__title">Nejlepší časy publikace</div>
-        <div class="panel__hint">Heatmapa den × hodina × Ø ER (IG, FB, TT sloučeno; min 2 posty v buňce)</div>
+        <div class="panel__hint">Heatmapa den × hodina × Ø ER (min 2 posty v buňce)</div>
+      </div>
+      <div class="filters" id="times-platform-filters" style="margin-bottom: 8px">
+        <button class="platform-btn active" data-pf="">Všechny</button>
+        <button class="platform-btn" data-pf="ig"><span class="badge ig">IG</span></button>
+        <button class="platform-btn" data-pf="fb"><span class="badge fb">FB</span></button>
+        <button class="platform-btn" data-pf="tt"><span class="badge tt">TT</span></button>
+        <button class="platform-btn" data-pf="yt"><span class="badge yt">YT</span></button>
       </div>
       <div class="rule" id="best-times-rule">—</div>
       <div class="chart" id="times-heat"></div>

@@ -54,10 +54,12 @@
     const plusTotalHours = plus.records.reduce((s, r) => s + (r.watchedHours || 0), 0);
     const plusTop = plus.records.slice().sort((a, b) => (b.viewsLive || 0) - (a.viewsLive || 0))[0];
 
+    const seasonsKnown = [...new Set(tv.records.map((r) => seasonKeyForRecord(r)).filter(Boolean))].sort();
+    const firstSeason = seasonsKnown[0] || '—';
     grid.appendChild(kpiCard({
       label: 'Premiéry na ČT sport',
       value: fmt(tvPrem.length),
-      sub: `+ ${fmt(tvRepr.length)} repríz · od roku ${Math.min(...tv.records.filter((r) => r.year).map((r) => r.year))}`,
+      sub: `+ ${fmt(tvRepr.length)} repríz · od sezóny ${firstSeason}`,
     }));
     grid.appendChild(kpiCard({
       label: 'Celkový reach 4+ (TV)',
@@ -69,10 +71,14 @@
       value: fmt((tvTopRecord?.reach4plus || 0) * 1000, { compact: true }),
       sub: tvTopRecord ? `${tvTopRecord.title?.replace(/^Hokej:\s*/, '') || '—'} · ${dateFmt(tvTopRecord.date)}` : '—',
     }));
+    const plusFirstSeason = (() => {
+      const seasons = [...new Set(plus.records.map((r) => seasonKeyForRecord(r)).filter(Boolean))].sort();
+      return seasons[0] || '—';
+    })();
     grid.appendChild(kpiCard({
       label: 'Online přenosy (ČT sport Plus)',
       value: fmt(plusTotal),
-      sub: `Od 2023 · ${fmt(plusTotalHours)} h sledování celkem`,
+      sub: `Od sezóny ${plusFirstSeason} · ${fmt(plusTotalHours)} h sledování celkem`,
     }));
     grid.appendChild(kpiCard({
       label: 'Online views celkem',
@@ -82,29 +88,42 @@
     grid.appendChild(kpiCard({
       label: 'Rekordní online přenos',
       value: fmt(plusTop?.viewsLive || 0, { compact: true }),
-      sub: plusTop ? `${(plusTop.title || '').replace(/^Univerzitní hokejová liga[:\s-]*/i, '').replace(/^Hokej[:\s-]*/i, '').slice(0, 90)} · ${plusTop.year}` : '—',
+      sub: plusTop ? `${(plusTop.title || '').replace(/^Univerzitní hokejová liga[:\s-]*/i, '').replace(/^Hokej[:\s-]*/i, '').slice(0, 90)} · sezóna ${seasonKeyForRecord(plusTop) || plusTop.year}` : '—',
     }));
   }
 
-  function aggregateByYear(records, valueKey, mode) {
-    const byYear = new Map();
-    for (const r of records) {
-      if (!r.year) continue;
-      if (!byYear.has(r.year)) byYear.set(r.year, []);
-      const v = valueKey === 'count' ? 1 : (r[valueKey] || 0);
-      byYear.get(r.year).push(v);
+  function seasonKeyForRecord(r) {
+    if (r.date) {
+      const s = M.seasonOf(r.date);
+      if (s) return s.key;
     }
-    const years = [...byYear.keys()].sort();
-    const series = years.map((y) => {
-      const vals = byYear.get(y).filter((v) => v != null);
+    // fallback: rok
+    if (r.year) return String(r.year);
+    return null;
+  }
+
+  function aggregateBySeason(records, valueKey, mode) {
+    const bySeason = new Map();
+    for (const r of records) {
+      const key = seasonKeyForRecord(r);
+      if (!key) continue;
+      if (!bySeason.has(key)) bySeason.set(key, []);
+      const v = valueKey === 'count' ? 1 : (r[valueKey] || 0);
+      bySeason.get(key).push(v);
+    }
+    const keys = [...bySeason.keys()].sort();
+    const series = keys.map((k) => {
+      const vals = bySeason.get(k).filter((v) => v != null);
       if (!vals.length) return 0;
       if (mode === 'sum' || valueKey === 'count') return vals.reduce((s, v) => s + v, 0);
       if (mode === 'avg') return vals.reduce((s, v) => s + v, 0) / vals.length;
       if (mode === 'max') return Math.max(...vals);
       return vals.reduce((s, v) => s + v, 0);
     });
-    return { years, series };
+    return { years: keys, series };
   }
+  // Zpětná kompatibilita názvu (interně teď agreguje po sezónách)
+  const aggregateByYear = aggregateBySeason;
 
   function renderTvYearlyChart(tv) {
     const metric = document.getElementById('tv-metric').value;
@@ -202,12 +221,12 @@
     const container = document.getElementById('plus-top-table');
     if (!top.length) { container.innerHTML = '<div class="empty">Bez dat.</div>'; return; }
     container.innerHTML = `<table class="table"><thead><tr>
-      <th>#</th><th>Rok</th><th>Datum</th><th>Zápas</th><th style="text-align:right">Views živě</th><th style="text-align:right">Sledov. hodin</th><th style="text-align:right">Délka přenosu</th>
+      <th>#</th><th>Sezóna</th><th>Datum</th><th>Zápas</th><th style="text-align:right">Views živě</th><th style="text-align:right">Sledov. hodin</th><th style="text-align:right">Délka přenosu</th>
     </tr></thead><tbody>${top.map((r, i) => {
       const cleanTitle = (r.title || '').replace(/^Univerzitní hokejová liga[:\s-]*/i, '').replace(/^Hokej[:\s-]*/i, '').replace(/\(hokej\/ULLH\)\s*$/i, '').trim();
       return `<tr>
         <td><strong>${i + 1}</strong></td>
-        <td>${r.year}</td>
+        <td>${seasonKeyForRecord(r) || r.year}</td>
         <td>${r.rawDate || ''}</td>
         <td class="caption-cell">${cleanTitle}</td>
         <td style="text-align:right"><strong>${fmt(r.viewsLive)}</strong></td>
@@ -246,16 +265,18 @@
     });
   }
 
-  function renderMeta() {
+  function renderMeta(data) {
     const now = new Date();
-    document.getElementById('meta').innerHTML = `Datový záběr <strong>2017 – 2026</strong>`;
+    const allSeasons = [...new Set([...data.tv.records, ...data.plus.records].map(seasonKeyForRecord).filter(Boolean))].sort();
+    const range = allSeasons.length ? `<strong>sezóna ${allSeasons[0]} – ${allSeasons[allSeasons.length - 1]}</strong>` : '<strong>—</strong>';
+    document.getElementById('meta').innerHTML = `Datový záběr ${range}`;
     document.getElementById('data-updated').textContent = new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }).format(now);
   }
 
   async function init() {
     try {
       const data = await loadData();
-      renderMeta();
+      renderMeta(data);
       renderKpis(data);
       renderTvYearlyChart(data.tv);
       renderTvTopTable(data.tv);

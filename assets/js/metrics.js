@@ -1,6 +1,22 @@
 (function () {
   const CFG = window.ULLH_CONFIG;
 
+  // Hokejová sezóna: 1.9. – 30.4. Sezóna 24/25 = 1.9.2024 – 30.4.2025.
+  function seasonOf(date) {
+    if (!date) return null;
+    const d = date instanceof Date ? date : new Date(date);
+    if (isNaN(d.getTime())) return null;
+    const m = d.getMonth() + 1; // 1-12
+    const y = d.getFullYear();
+    // září–prosinec → sezóna začíná tímto rokem
+    // leden–duben → sezóna začala předchozím rokem
+    // květen–srpen → mimosezóna, přiřadíme předchozí sezóně (zápasy se občas vysílají v srpnu jako repríza)
+    const startYear = m >= 9 ? y : (m <= 4 ? y - 1 : y - 1);
+    const endYear = startYear + 1;
+    const key = `${String(startYear).slice(-2)}/${String(endYear).slice(-2)}`;
+    return { key, label: `Sezóna ${key}`, startYear, endYear };
+  }
+
   function maxDate(rows) {
     let m = 0;
     for (const r of rows) { if (r.date > m) m = r.date; }
@@ -396,6 +412,7 @@
   }
 
   window.ULLHMetrics = {
+    seasonOf,
     maxDate, addDays, formatNumber, formatDelta,
     latestSubs, subsByDate, currentSubsSumByTeam, subsSumOnDay, subsGrowth,
     postsInWindow, avgEr, sumEngagement, sumImpressions, sumViews,

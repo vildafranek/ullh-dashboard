@@ -3,9 +3,18 @@
   const C = window.ULLHCharts;
   const CFG = window.ULLH_CONFIG;
 
-  function qs(name) {
-    return new URL(location.href).searchParams.get(name);
-  }
+  // State
+  const state = {
+    team: null,
+    data: null,
+    period: { mode: 'days', days: 30 }, // 'days' | 'custom' | 'all'
+    customFrom: null,
+    customTo: null,
+    platformFilter: '', // '', 'ig', 'fb', 'tt', 'yt'
+    postSort: { col: 'er', dir: 'desc' },
+  };
+
+  function qs(name) { return new URL(location.href).searchParams.get(name); }
 
   function getTeam() {
     const slug = qs('team') || CFG.teamsOnly[0].slug;
@@ -20,115 +29,280 @@
     });
   }
 
-  function renderHero(team, snapshot) {
+  function getPeriodRange() {
+    const md = M.maxDate([...state.data.accounts, ...state.data.posts]);
+    if (state.period.mode === 'custom' && state.customFrom && state.customTo) {
+      return { from: state.customFrom, to: state.customTo, label: `${fmtDate(state.customFrom)} – ${fmtDate(state.customTo)}` };
+    }
+    if (state.period.mode === 'all') {
+      const rows = [...state.data.accounts, ...state.data.posts];
+      let min = new Date();
+      for (const r of rows) if (r.date < min) min = r.date;
+      return { from: min, to: md, label: 'Vše (od ' + fmtDate(min) + ')' };
+    }
+    const days = state.period.days;
+    return { from: M.addDays(md, -days), to: md, label: `posledních ${days} dní (k ${fmtDate(md)})` };
+  }
+
+  function fmtDate(d) {
+    if (!d) return '—';
+    return new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' }).format(d);
+  }
+
+  function teamPostsInRange() {
+    const { from, to } = getPeriodRange();
+    return state.data.posts.filter((p) => p.team === state.team.slug && p.date >= from && p.date <= to);
+  }
+
+  function teamPrevPostsInRange() {
+    const { from, to } = getPeriodRange();
+    const span = to - from;
+    return state.data.posts.filter((p) => p.team === state.team.slug && p.date >= new Date(from - span) && p.date < from);
+  }
+
+  function renderHero() {
+    const team = state.team;
     const mark = document.getElementById('team-mark');
-    if (team.logo) {
-      mark.style.background = '#fff';
-      mark.innerHTML = `<img src="${team.logo}" alt="${team.name}" style="width:100%;height:100%;object-fit:contain;padding:6px">`;
+    const logoSrc = (window.ULLHUi && window.ULLHUi.teamLogoSrc) ? window.ULLHUi.teamLogoSrc(team) : null;
+    if (logoSrc) {
+      mark.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = logoSrc; img.alt = team.name;
+      img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'contain';
+      img.onerror = () => { mark.style.background = `linear-gradient(135deg, ${team.color}88, ${team.color})`; mark.textContent = team.short; };
+      mark.appendChild(img);
+      mark.style.background = 'transparent';
+      mark.style.padding = '6px';
     } else {
       mark.style.background = `linear-gradient(135deg, ${team.color}88, ${team.color})`;
       mark.textContent = team.short;
     }
     document.getElementById('team-name').textContent = team.name;
-    const deltaPct = M.formatDelta(snapshot.subsDeltaPct, true);
+
+    const { from, to } = getPeriodRange();
+    const subsNow = M.subsSumOnDay(state.data.accounts, team.slug, to);
+    const subsBefore = M.subsSumOnDay(state.data.accounts, team.slug, from);
+    const delta = subsNow - subsBefore;
+    const dPct = subsBefore > 0 ? delta / subsBefore : 0;
+    const dPctFmt = M.formatDelta(dPct, true);
+    const posts = teamPostsInRange();
     document.getElementById('team-meta').innerHTML = `
-      <strong>${M.formatNumber(snapshot.subs, { compact: true })}</strong> followers &middot;
-      <span class="delta ${deltaPct.klass}">${deltaPct.text}</span> za 7 d &middot;
-      <strong>${snapshot.posts}</strong> postů za 7 d`;
+      <strong>${M.formatNumber(subsNow, { compact: true })}</strong> followers &middot;
+      <span class="delta ${dPctFmt.klass}">${dPctFmt.text}</span> za vybrané období &middot;
+      <strong>${posts.length}</strong> publikovaných postů`;
     document.getElementById('all-posts-link').href = `posts.html?team=${team.slug}`;
   }
 
-  function platformCard(platformKey, platformMeta, subs, subsDelta, posts, er) {
-    const d = M.formatDelta(subsDelta);
-    return `
-      <div class="kpi">
-        <div class="kpi__label"><span class="badge ${platformKey}">${platformMeta.label}</span></div>
-        <div class="kpi__value">${M.formatNumber(subs, { compact: true })}<span class="kpi__unit">followers</span></div>
-        <div class="kpi__delta ${d.klass}">${d.text} za 7 d</div>
-        <div class="kpi__sub">${posts} postů · Ø ER ${(er * 100).toFixed(2)}%</div>
-      </div>`;
+  function renderSummaryKpis() {
+    const grid = document.getElementById('summary-kpis');
+    grid.innerHTML = '';
+    const { from, to } = getPeriodRange();
+    const posts = teamPostsInRange();
+    const prev = teamPrevPostsInRange();
+
+    const subsNow = M.subsSumOnDay(state.data.accounts, state.team.slug, to);
+    const subsBefore = M.subsSumOnDay(state.data.accounts, state.team.slug, from);
+    const subsDelta = subsNow - subsBefore;
+
+    const sumViews = posts.reduce((s, p) => s + (p.views || 0), 0);
+    const prevViews = prev.reduce((s, p) => s + (p.views || 0), 0);
+    const sumEng = posts.reduce((s, p) => s + p.engagement, 0);
+    const prevEng = prev.reduce((s, p) => s + p.engagement, 0);
+    const sumReach = posts.reduce((s, p) => s + (p.reach || p.impressions || 0), 0);
+    const prevReach = prev.reduce((s, p) => s + (p.reach || p.impressions || 0), 0);
+
+    const card = ({ label, value, delta, sub }) => {
+      const div = document.createElement('div');
+      div.className = 'kpi';
+      const dHtml = delta ? `<div class="kpi__delta ${delta.klass}">${delta.text}</div>` : '';
+      const sHtml = sub ? `<div class="kpi__sub">${sub}</div>` : '';
+      div.innerHTML = `<div class="kpi__label">${label}</div><div class="kpi__value">${value}</div>${dHtml}${sHtml}`;
+      return div;
+    };
+    const pctDelta = (now, before) => before > 0 ? M.formatDelta((now - before) / before, true) : { text: '—', klass: 'flat' };
+
+    grid.appendChild(card({
+      label: 'Růst followerů',
+      value: M.formatDelta(subsDelta).text,
+      sub: `${M.formatNumber(subsNow, { compact: true })} celkem · ${pctDelta(subsNow, subsBefore).text}`,
+    }));
+    grid.appendChild(card({
+      label: 'Zhlédnutí',
+      value: M.formatNumber(sumViews, { compact: true }),
+      delta: pctDelta(sumViews, prevViews),
+      sub: 'vs. předchozí stejné období',
+    }));
+    grid.appendChild(card({
+      label: 'Engagement',
+      value: M.formatNumber(sumEng, { compact: true }),
+      delta: pctDelta(sumEng, prevEng),
+      sub: 'Likes + komentáře + sdílení',
+    }));
+    grid.appendChild(card({
+      label: 'Dosah',
+      value: M.formatNumber(sumReach, { compact: true }),
+      delta: pctDelta(sumReach, prevReach),
+      sub: 'Sum reach z postů',
+    }));
+    grid.appendChild(card({
+      label: 'Publikováno',
+      value: posts.length,
+      delta: M.formatDelta(posts.length - prev.length),
+      sub: 'počet postů',
+    }));
+    const er = posts.filter((p) => p.er > 0);
+    const avgEr = er.length ? er.reduce((s, p) => s + p.er, 0) / er.length : 0;
+    grid.appendChild(card({
+      label: 'Ø Engagement rate',
+      value: M.formatNumber(avgEr, { percent: true, digits: 2 }),
+      sub: er.length ? `${er.length} postů s dosahem` : '—',
+    }));
   }
 
-  function renderPlatforms(team, data) {
+  function renderPlatformCards() {
     const grid = document.getElementById('platform-cards');
-    const md = M.maxDate([...data.accounts, ...data.posts]);
-    const from = M.addDays(md, -7);
+    grid.innerHTML = '';
+    const { from, to } = getPeriodRange();
     const entries = Object.entries(CFG.platforms).sort((a, b) => a[1].order - b[1].order);
-    const html = entries.map(([platformName, meta]) => {
-      const latestNow = M.latestSubs(data.accounts, team.slug, meta.key);
-      if (!latestNow) {
+    grid.innerHTML = entries.map(([_, meta]) => {
+      const latest = M.latestSubs(state.data.accounts, state.team.slug, meta.key);
+      if (!latest) {
         return `<div class="kpi" style="opacity: 0.5">
           <div class="kpi__label"><span class="badge ${meta.key}">${meta.label}</span></div>
           <div class="kpi__value" style="font-size: 18px; color: var(--muted)">Bez účtu</div>
           <div class="kpi__sub">Tým nemá na ${meta.label} profil v datech</div>
         </div>`;
       }
-      const subs = latestNow.subs;
-      const rowsBeforeAll = data.accounts.filter((r) => r.team === team.slug && r.platform === meta.key);
-      const earliestBefore = rowsBeforeAll.filter((r) => r.day <= from.toISOString().slice(0, 10));
-      const before = earliestBefore.length
-        ? earliestBefore.reduce((a, b) => a.date > b.date ? a : b).subs
-        : (rowsBeforeAll.length ? rowsBeforeAll.reduce((a, b) => a.date < b.date ? a : b).subs : subs);
+      const subs = latest.subs;
+      const rowsAll = state.data.accounts.filter((r) => r.team === state.team.slug && r.platform === meta.key);
+      const rowsBefore = rowsAll.filter((r) => r.day <= from.toISOString().slice(0, 10));
+      const before = rowsBefore.length
+        ? rowsBefore.reduce((a, b) => a.date > b.date ? a : b).subs
+        : (rowsAll.length ? rowsAll.reduce((a, b) => a.date < b.date ? a : b).subs : subs);
       const subsDelta = subs - before;
-      const windowPosts = data.posts.filter((p) => p.team === team.slug && p.platform === meta.key && p.date >= from);
-      const er = M.avgEr(windowPosts);
-      return platformCard(meta.key, meta, subs, subsDelta, windowPosts.length, er);
+      const platformPosts = state.data.posts.filter((p) => p.team === state.team.slug && p.platform === meta.key && p.date >= from && p.date <= to);
+      const erList = platformPosts.filter((p) => p.er > 0);
+      const er = erList.length ? erList.reduce((s, p) => s + p.er, 0) / erList.length : 0;
+      const d = M.formatDelta(subsDelta);
+      return `
+        <div class="kpi">
+          <div class="kpi__label"><span class="badge ${meta.key}">${meta.label}</span></div>
+          <div class="kpi__value">${M.formatNumber(subs, { compact: true })}<span class="kpi__unit">followers</span></div>
+          <div class="kpi__delta ${d.klass}">${d.text} za období</div>
+          <div class="kpi__sub">${platformPosts.length} postů · Ø ER ${(er * 100).toFixed(2)}%</div>
+        </div>`;
     }).join('');
-    grid.innerHTML = html;
   }
 
-  function renderSubsChart(team, data) {
-    const series = [];
+  function renderFollowerCharts() {
+    const wrap = document.getElementById('follower-charts');
+    wrap.innerHTML = '';
+    const { from, to } = getPeriodRange();
     const entries = Object.entries(CFG.platforms).sort((a, b) => a[1].order - b[1].order);
-    for (const [platformName, meta] of entries) {
-      const points = M.subsByDate(data.accounts, team.slug, meta.key).map((r) => [r.day, r.subs]);
-      if (points.length) series.push({ name: meta.label, color: meta.color, points });
+    let rendered = 0;
+    for (const [_, meta] of entries) {
+      const points = M.subsByDate(state.data.accounts, state.team.slug, meta.key)
+        .filter((r) => r.date >= from && r.date <= to)
+        .map((r) => [r.day, r.subs]);
+      if (!points.length) continue;
+      const div = document.createElement('div');
+      div.innerHTML = `<h4 style="font-size: 12px; color: var(--silver); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase">${meta.label}</h4><div class="chart short" id="fchart-${meta.key}"></div>`;
+      wrap.appendChild(div);
+      const elChart = div.querySelector(`#fchart-${meta.key}`);
+      // Dynamic Y axis
+      const ys = points.map((p) => p[1]);
+      const min = Math.min(...ys);
+      const max = Math.max(...ys);
+      const padding = Math.max(1, (max - min) * 0.1);
+      C.init(elChart, {
+        tooltip: { trigger: 'axis' },
+        grid: { top: 16, left: 56, right: 16, bottom: 30 },
+        xAxis: { type: 'category', data: points.map((p) => p[0]), boundaryGap: false, axisLabel: { interval: Math.max(0, Math.floor(points.length / 6) - 1) } },
+        yAxis: {
+          type: 'value',
+          min: Math.floor(min - padding),
+          max: Math.ceil(max + padding),
+          scale: true,
+          axisLabel: { formatter: (v) => new Intl.NumberFormat('cs-CZ').format(v) },
+        },
+        series: [{
+          name: meta.label,
+          type: 'line',
+          data: points.map((p) => p[1]),
+          smooth: true,
+          showSymbol: points.length < 30,
+          lineStyle: { width: 2, color: meta.color },
+          itemStyle: { color: meta.color },
+          areaStyle: { color: meta.color, opacity: 0.1 },
+        }],
+      });
+      rendered++;
     }
-    if (!series.length) {
-      document.getElementById('chart-subs').innerHTML = '<div class="empty">Pro tento tým zatím nejsou v datech žádné snapshoty.</div>';
-      return;
-    }
-    C.teamSubsTrend(document.getElementById('chart-subs'), series);
+    if (!rendered) wrap.innerHTML = '<div class="empty">Pro tento tým zatím nejsou v datech žádné snapshoty.</div>';
   }
 
-  function renderTopPosts(team, data) {
-    const md = M.maxDate(data.posts);
-    const from = M.addDays(md, -28);
-    const posts = data.posts
-      .filter((p) => p.team === team.slug && p.date >= from && (p.impressions >= 50 || p.views >= 50))
-      .sort((a, b) => b.er - a.er)
-      .slice(0, 10);
+  function getFilteredPosts() {
+    const { from, to } = getPeriodRange();
+    let posts = state.data.posts.filter((p) => p.team === state.team.slug && p.date >= from && p.date <= to);
+    if (state.platformFilter) posts = posts.filter((p) => p.platform === state.platformFilter);
+    return posts;
+  }
+
+  function renderTopPosts() {
     const container = document.getElementById('top-posts');
+    let posts = getFilteredPosts().filter((p) => p.impressions >= 50 || p.views >= 50);
     if (!posts.length) {
-      container.innerHTML = '<div class="empty">Žádné posty s dostatečným dosahem.</div>';
+      container.innerHTML = '<div class="empty">Žádné posty s dostatečným dosahem v tomto období.</div>';
       return;
     }
-    const fmt = new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' });
-    container.innerHTML = `<table class="table"><thead><tr>
-      <th>Datum</th><th>Formát</th><th>Post</th><th style="text-align:right">ER</th><th style="text-align:right">Eng.</th>
-    </tr></thead><tbody>
-    ${posts.map((p) => `<tr>
-      <td>${fmt.format(p.date)}</td>
-      <td><span class="badge ${p.platform}">${CFG.formatLabels[p.format] || p.format || '—'}</span></td>
-      <td class="caption-cell"><a href="${p.permalink}" target="_blank" rel="noopener">${(p.caption || '(bez popisku)').slice(0, 100).replace(/</g,'&lt;')}</a></td>
-      <td style="text-align:right"><strong>${(p.er * 100).toFixed(2)}%</strong></td>
-      <td style="text-align:right">${M.formatNumber(p.engagement)}</td>
-    </tr>`).join('')}
-    </tbody></table>`;
+    const cols = [
+      { key: 'date',     label: 'Datum',    align: 'left',  get: (p) => p.date,    cell: (p) => new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric', year: '2-digit' }).format(p.date) },
+      { key: 'platform', label: 'Platf.',   align: 'left',  get: (p) => p.platform || '', cell: (p) => p.platform ? `<span class="badge ${p.platform}">${(Object.values(CFG.platforms).find(x=>x.key===p.platform)||{}).label || p.platform}</span>` : '—' },
+      { key: 'format',   label: 'Formát',   align: 'left',  get: (p) => p.format || '',   cell: (p) => CFG.formatLabels[p.format] || p.format || '—' },
+      { key: 'caption',  label: 'Post',     align: 'left',  get: (p) => (p.caption||'').toLowerCase(), cell: (p) => `<a href="${p.permalink}" target="_blank" rel="noopener">${(p.caption || '(bez popisku)').slice(0,100).replace(/</g,'&lt;')}</a>` },
+      { key: 'views',    label: 'Views',    align: 'right', get: (p) => p.views || 0, cell: (p) => M.formatNumber(p.views) },
+      { key: 'reach',    label: 'Reach',    align: 'right', get: (p) => p.reach || p.impressions || 0, cell: (p) => M.formatNumber(p.reach || p.impressions || 0) },
+      { key: 'engagement', label: 'Eng.',   align: 'right', get: (p) => p.engagement,                  cell: (p) => M.formatNumber(p.engagement) },
+      { key: 'er',       label: 'ER',       align: 'right', get: (p) => p.er,         cell: (p) => `<strong>${(p.er*100).toFixed(2)}%</strong>` },
+    ];
+
+    const sorted = posts.slice().sort((a, b) => {
+      const col = cols.find((c) => c.key === state.postSort.col) || cols[0];
+      const av = col.get(a), bv = col.get(b);
+      const cmp = (av > bv ? 1 : av < bv ? -1 : 0);
+      return state.postSort.dir === 'asc' ? cmp : -cmp;
+    });
+    const top = sorted.slice(0, 25);
+
+    const ths = cols.map((c) => {
+      const cls = c.key === state.postSort.col ? `sortable sorted-${state.postSort.dir}` : 'sortable';
+      return `<th class="${cls}" data-col="${c.key}" style="text-align: ${c.align}">${c.label}</th>`;
+    }).join('');
+    const trs = top.map((p) => `<tr>${cols.map((c) => `<td style="text-align: ${c.align}" ${c.key === 'caption' ? 'class="caption-cell"' : ''}>${c.cell(p)}</td>`).join('')}</tr>`).join('');
+    container.innerHTML = `<div style="max-height: 480px; overflow: auto"><table class="table">
+      <thead><tr>${ths}</tr></thead><tbody>${trs}</tbody>
+    </table></div><div style="margin-top: 8px; color: var(--muted); font-size: 11px">Zobrazuji ${top.length} z ${posts.length} postů (ER ≥ 50 dosah). Klikni na hlavičku pro řazení.</div>`;
+
+    container.querySelectorAll('th.sortable').forEach((th) => {
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        if (state.postSort.col === col) state.postSort.dir = state.postSort.dir === 'asc' ? 'desc' : 'asc';
+        else { state.postSort.col = col; state.postSort.dir = 'desc'; }
+        renderTopPosts();
+      });
+    });
   }
 
-  function renderActivityChart(team, data) {
-    const md = M.maxDate(data.posts);
-    const from = M.addDays(md, -28);
-    const posts = data.posts.filter((p) => p.team === team.slug && p.date >= from);
+  function renderActivityChart() {
+    const { from, to } = getPeriodRange();
+    const posts = state.data.posts.filter((p) => p.team === state.team.slug && p.date >= from && p.date <= to);
     const formats = ['photo', 'reel', 'video', 'story', 'carousel', 'short', 'text'];
     const platformKeys = ['ig', 'fb', 'tt', 'yt'];
-    const series = formats.map((fmt) => ({
-      name: CFG.formatLabels[fmt] || fmt,
-      type: 'bar',
-      stack: 'total',
-      data: platformKeys.map((pk) => posts.filter((p) => p.platform === pk && p.format === fmt).length),
-      emphasis: { focus: 'series' },
+    const series = formats.map((fmtKey) => ({
+      name: CFG.formatLabels[fmtKey] || fmtKey,
+      type: 'bar', stack: 'total',
+      data: platformKeys.map((pk) => posts.filter((p) => p.platform === pk && p.format === fmtKey).length),
     })).filter((s) => s.data.some((v) => v > 0));
     C.init(document.getElementById('chart-activity'), {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -140,24 +314,126 @@
     });
   }
 
-  function renderMeta(data) {
-    const md = M.maxDate([...data.accounts, ...data.posts]);
+  function renderMeta() {
+    const md = M.maxDate([...state.data.accounts, ...state.data.posts]);
     const fmt = new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }).format(md);
-    document.getElementById('meta').innerHTML = `Data ke dni <strong>${fmt}</strong>${data.fromCache ? ' · z cache' : ''}`;
+    document.getElementById('meta').innerHTML = `Data ke dni <strong>${fmt}</strong>${state.data.fromCache ? ' · z cache' : ''}`;
+    const range = getPeriodRange();
+    document.getElementById('period-info').textContent = range.label;
+  }
+
+  function rerenderAll() {
+    renderMeta();
+    renderHero();
+    renderSummaryKpis();
+    renderPlatformCards();
+    renderFollowerCharts();
+    renderTopPosts();
+    renderActivityChart();
+  }
+
+  function csvDownload(rows, filename) {
+    const csv = rows.map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportPosts() {
+    const posts = getFilteredPosts();
+    const rows = [['Datum', 'Platforma', 'Formát', 'Caption', 'Views', 'Reach', 'Likes', 'Comments', 'Shares', 'Engagement', 'ER %', 'URL']];
+    for (const p of posts) {
+      rows.push([
+        p.date.toISOString(), p.platform || '', p.format || '',
+        (p.caption || '').replace(/\s+/g, ' '),
+        p.views, p.reach || p.impressions || 0, p.likes, p.comments, p.shares, p.engagement,
+        (p.er * 100).toFixed(2), p.permalink || '',
+      ]);
+    }
+    csvDownload(rows, `posty-${state.team.slug}-${new Date().toISOString().slice(0,10)}.csv`);
+  }
+
+  function exportSummary() {
+    const { from, to } = getPeriodRange();
+    const posts = teamPostsInRange();
+    const subsNow = M.subsSumOnDay(state.data.accounts, state.team.slug, to);
+    const subsBefore = M.subsSumOnDay(state.data.accounts, state.team.slug, from);
+    const sumViews = posts.reduce((s, p) => s + (p.views || 0), 0);
+    const sumEng = posts.reduce((s, p) => s + p.engagement, 0);
+    const sumReach = posts.reduce((s, p) => s + (p.reach || p.impressions || 0), 0);
+    const erList = posts.filter((p) => p.er > 0);
+    const avgEr = erList.length ? erList.reduce((s, p) => s + p.er, 0) / erList.length : 0;
+    const rows = [
+      ['Tým', state.team.name],
+      ['Období', `${fmtDate(from)} – ${fmtDate(to)}`],
+      ['Celkem followers (k datu)', subsNow],
+      ['Růst followerů za období', subsNow - subsBefore],
+      ['Zhlédnutí (sum)', sumViews],
+      ['Reach (sum)', sumReach],
+      ['Engagement (sum)', sumEng],
+      ['Publikováno (počet)', posts.length],
+      ['Ø Engagement rate', (avgEr * 100).toFixed(2) + '%'],
+    ];
+    for (const [_, meta] of Object.entries(CFG.platforms).sort((a, b) => a[1].order - b[1].order)) {
+      const latest = M.latestSubs(state.data.accounts, state.team.slug, meta.key);
+      const platformPosts = posts.filter((p) => p.platform === meta.key);
+      rows.push([`${meta.label} — followers`, latest ? latest.subs : 0]);
+      rows.push([`${meta.label} — počet postů`, platformPosts.length]);
+    }
+    csvDownload(rows, `prehled-${state.team.slug}-${new Date().toISOString().slice(0,10)}.csv`);
+  }
+
+  function setupPeriodControls() {
+    const buttons = document.querySelectorAll('.period-btn');
+    buttons.forEach((b) => b.addEventListener('click', () => {
+      buttons.forEach((x) => x.classList.remove('active'));
+      b.classList.add('active');
+      const dv = b.dataset.days;
+      if (dv === 'all') state.period = { mode: 'all' };
+      else state.period = { mode: 'days', days: Number(dv) };
+      state.customFrom = state.customTo = null;
+      document.getElementById('period-from').value = '';
+      document.getElementById('period-to').value = '';
+      rerenderAll();
+    }));
+    document.getElementById('apply-custom').addEventListener('click', () => {
+      const f = document.getElementById('period-from').value;
+      const t = document.getElementById('period-to').value;
+      if (!f || !t) return;
+      state.customFrom = new Date(f);
+      state.customTo = new Date(t + 'T23:59:59');
+      state.period = { mode: 'custom' };
+      buttons.forEach((x) => x.classList.remove('active'));
+      rerenderAll();
+    });
+  }
+
+  function setupPlatformControls() {
+    const buttons = document.querySelectorAll('.platform-btn');
+    buttons.forEach((b) => b.addEventListener('click', () => {
+      buttons.forEach((x) => x.classList.remove('active'));
+      b.classList.add('active');
+      state.platformFilter = b.dataset.pf || '';
+      renderTopPosts();
+    }));
   }
 
   async function init() {
-    const team = getTeam();
-    populateSelector(team);
+    state.team = getTeam();
+    populateSelector(state.team);
     try {
-      const data = await window.ULLHData.load();
-      renderMeta(data);
-      const snapshot = M.teamSnapshot(data, team.slug, 7);
-      renderHero(team, snapshot);
-      renderPlatforms(team, data);
-      renderSubsChart(team, data);
-      renderTopPosts(team, data);
-      renderActivityChart(team, data);
+      state.data = await window.ULLHData.load();
+      // Initialize date inputs hint
+      const md = M.maxDate([...state.data.accounts, ...state.data.posts]);
+      document.getElementById('period-from').max = md.toISOString().slice(0, 10);
+      document.getElementById('period-to').max = md.toISOString().slice(0, 10);
+      setupPeriodControls();
+      setupPlatformControls();
+      document.getElementById('export-posts').addEventListener('click', exportPosts);
+      document.getElementById('export-summary').addEventListener('click', exportSummary);
+      rerenderAll();
     } catch (err) {
       console.error(err);
       document.getElementById('platform-cards').innerHTML = `<div class="panel" style="grid-column: 1 / -1"><div class="panel__note" style="border-color: var(--bad); color: var(--bad)">${String(err && err.message || err)}</div></div>`;

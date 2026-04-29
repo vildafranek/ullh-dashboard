@@ -76,7 +76,8 @@
   function render() {
     const table = document.getElementById('posts-table');
     const thHtml = columns.map((c) => {
-      const cls = c.key === state.sort.col ? `sorted-${state.sort.dir}` : '';
+      const sortCls = c.key === state.sort.col ? `sorted-${state.sort.dir}` : '';
+      const cls = ['sortable', sortCls].filter(Boolean).join(' ');
       const style = c.align === 'right' ? 'text-align: right' : '';
       return `<th class="${cls}" data-col="${c.key}" style="${style}">${c.label}</th>`;
     }).join('');

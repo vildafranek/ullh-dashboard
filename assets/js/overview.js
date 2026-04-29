@@ -85,45 +85,78 @@
     }));
   }
 
-  function leaderboardTable(rows, { showScore = true } = {}) {
+  // Stav řazení per leaderboard wrapper
+  const sortStates = new WeakMap();
+
+  function leaderboardTable(rows, { showScore = true, wrapEl = null } = {}) {
+    const columns = [
+      { key: 'rank',      label: '#',        align: 'left',  sortable: false, width: '48px' },
+      { key: 'team',      label: 'Účet',     align: 'left',  sortable: true,  get: (r) => r.team.name.toLowerCase() },
+      { key: 'subs',      label: 'Followers',  align: 'right', sortable: true, get: (r) => r.subs,        cell: (r) => M.formatNumber(r.subs, { compact: true }) },
+      { key: 'subsDelta', label: 'Δ 28 d',     align: 'right', sortable: true, get: (r) => r.subsDelta,   cell: (r) => { const d = M.formatDelta(r.subsDelta); return `<span class="delta ${d.klass}">${d.text}</span>`; } },
+      { key: 'posts',     label: 'Postů',      align: 'right', sortable: true, get: (r) => r.posts,       cell: (r) => r.posts },
+      { key: 'views',     label: 'Zhlédnutí',  align: 'right', sortable: true, get: (r) => r.views,       cell: (r) => M.formatNumber(r.views, { compact: true }) },
+      { key: 'engagement',label: 'Engagement', align: 'right', sortable: true, get: (r) => r.engagement,  cell: (r) => M.formatNumber(r.engagement, { compact: true }) },
+      { key: 'er',        label: 'Ø ER',       align: 'right', sortable: true, get: (r) => r.er,          cell: (r) => M.formatNumber(r.er, { percent: true, digits: 2 }) },
+    ];
+    if (showScore) {
+      columns.push({ key: 'score', label: 'Skóre', align: 'right', sortable: true, get: (r) => r.score, cell: (r) => `<strong title="Velikost ${(r.sizeScore*100).toFixed(0)} · Aktivita ${(r.activityScore*100).toFixed(0)} · Engagement ${(r.engagementScore*100).toFixed(0)} (klikni Skóre pro řazení)">${(r.score * 100).toFixed(0)}</strong>` });
+    }
+
+    const stateKey = wrapEl || rows;
+    let state = sortStates.get(stateKey);
+    if (!state) {
+      state = { col: showScore ? 'score' : 'subs', dir: 'desc' };
+      sortStates.set(stateKey, state);
+    }
+
     const table = el('table', { class: 'leaderboard' });
-    const extraScore = showScore ? '<th style="text-align:right">Skóre</th>' : '';
-    table.innerHTML = `
-      <thead>
-        <tr>
-          <th style="width: 48px">#</th>
-          <th>Účet</th>
-          <th style="text-align:right">Followers</th>
-          <th style="text-align:right">Δ 28 d</th>
-          <th style="text-align:right">Postů</th>
-          <th style="text-align:right">Zhlédnutí</th>
-          <th style="text-align:right">Engagement</th>
-          <th style="text-align:right">Ø ER</th>
-          ${extraScore}
-        </tr>
-      </thead>
-      <tbody></tbody>`;
-    const tbody = table.querySelector('tbody');
-    rows.forEach((r, i) => {
-      const tr = el('tr', { class: i === 0 && showScore ? 'top1' : '' });
-      const subsDelta = M.formatDelta(r.subsDelta);
-      const scoreCell = showScore ? `<td style="text-align:right"><strong>${(r.score * 100).toFixed(0)}</strong></td>` : '';
-      tr.innerHTML = `
-        <td><span class="rank">${i + 1}</span></td>
-        <td><div class="team">${teamBadge(r.team)}<span>${r.team.name}</span></div></td>
-        <td style="text-align:right">${M.formatNumber(r.subs, { compact: true })}</td>
-        <td style="text-align:right"><span class="delta ${subsDelta.klass}">${subsDelta.text}</span></td>
-        <td style="text-align:right">${r.posts}</td>
-        <td style="text-align:right">${M.formatNumber(r.views, { compact: true })}</td>
-        <td style="text-align:right">${M.formatNumber(r.engagement, { compact: true })}</td>
-        <td style="text-align:right">${M.formatNumber(r.er, { percent: true, digits: 2 })}</td>
-        ${scoreCell}`;
-      if (r.team.kind === 'team') {
-        tr.addEventListener('click', () => { location.href = `teams.html?team=${r.team.slug}`; });
-      } else {
-        tr.style.cursor = 'default';
+    const sorted = rows.slice().sort((a, b) => {
+      const col = columns.find((c) => c.key === state.col) || columns[2];
+      const av = col.get ? col.get(a) : 0;
+      const bv = col.get ? col.get(b) : 0;
+      const cmp = (av > bv ? 1 : av < bv ? -1 : 0);
+      return state.dir === 'asc' ? cmp : -cmp;
+    });
+
+    const ths = columns.map((c) => {
+      const cls = c.sortable ? (c.key === state.col ? `sortable sorted-${state.dir}` : 'sortable') : '';
+      const styleW = c.width ? `width: ${c.width};` : '';
+      const style = `${styleW} text-align: ${c.align};`;
+      return `<th class="${cls}" data-col="${c.key}" style="${style}">${c.label}</th>`;
+    }).join('');
+    const trs = sorted.map((r, i) => {
+      const isTop = i === 0 && state.col === 'score' && state.dir === 'desc' && showScore;
+      const cells = columns.map((c) => {
+        if (c.key === 'rank') return `<td><span class="rank">${i + 1}</span></td>`;
+        if (c.key === 'team') return `<td><div class="team">${teamBadge(r.team)}<span>${r.team.name}</span></div></td>`;
+        const style = `text-align: ${c.align};`;
+        return `<td style="${style}">${c.cell(r)}</td>`;
+      }).join('');
+      return `<tr class="${isTop ? 'top1' : ''}" data-team="${r.team.slug}" data-team-kind="${r.team.kind || 'team'}">${cells}</tr>`;
+    }).join('');
+    table.innerHTML = `<thead><tr>${ths}</tr></thead><tbody>${trs}</tbody>`;
+
+    // Sort interaction
+    table.querySelectorAll('th.sortable').forEach((th) => {
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        if (state.col === col) state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+        else { state.col = col; state.dir = 'desc'; }
+        const newTable = leaderboardTable(rows, { showScore, wrapEl });
+        th.closest('table').replaceWith(newTable);
+      });
+    });
+
+    // Row click → drill-down
+    table.querySelectorAll('tbody tr').forEach((tr) => {
+      const slug = tr.dataset.team;
+      const kind = tr.dataset.teamKind;
+      if (kind === 'team') {
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', () => { location.href = `teams.html?team=${slug}`; });
       }
-      tbody.appendChild(tr);
     });
     return table;
   }
@@ -132,13 +165,13 @@
     const rowsTeam = M.leaderboard(data, { kind: 'team', windowDays: 28 });
     const wrapT = document.getElementById('leaderboard-wrap');
     wrapT.innerHTML = '';
-    wrapT.appendChild(leaderboardTable(rowsTeam, { showScore: true }));
+    wrapT.appendChild(leaderboardTable(rowsTeam, { showScore: true, wrapEl: wrapT }));
 
     const rowsLiga = M.leaderboard(data, { kind: 'liga', windowDays: 28 });
     const wrapL = document.getElementById('liga-wrap');
     if (wrapL) {
       wrapL.innerHTML = '';
-      if (rowsLiga.length) wrapL.appendChild(leaderboardTable(rowsLiga, { showScore: false }));
+      if (rowsLiga.length) wrapL.appendChild(leaderboardTable(rowsLiga, { showScore: false, wrapEl: wrapL }));
       else wrapL.innerHTML = '<div class="empty">Žádná data pro ligové/event stránky.</div>';
     }
   }

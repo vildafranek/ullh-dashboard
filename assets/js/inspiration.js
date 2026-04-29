@@ -46,17 +46,37 @@
     }).join('')}</tbody></table>`;
   }
 
+  let bestTimesData = null;
+  let bestTimesPlatform = '';
   function renderBestTimes(data) {
-    const heat = M.bestPostingTimes(data.posts);
+    bestTimesData = data;
+    drawBestTimes();
+  }
+  function drawBestTimes() {
+    const data = bestTimesData;
+    const platformLabel = bestTimesPlatform
+      ? (Object.values(CFG.platforms).find((p) => p.key === bestTimesPlatform)?.label || bestTimesPlatform)
+      : 'všech platformách';
+    const heat = M.bestPostingTimes(data.posts, bestTimesPlatform || null);
     if (!heat.length) {
-      document.getElementById('times-heat').innerHTML = '<div class="empty">Nedostatek postů v datech pro heatmapu.</div>';
+      document.getElementById('times-heat').innerHTML = '<div class="empty">Nedostatek postů v datech pro heatmapu (vyber jinou platformu).</div>';
+      document.getElementById('best-times-rule').innerHTML = `Pro ${platformLabel} zatím není dost dat.`;
       return;
     }
     C.bestTimesHeat(document.getElementById('times-heat'), heat);
     const top = heat.slice().sort((a, b) => b[2] - a[2])[0];
     const days = ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'];
     document.getElementById('best-times-rule').innerHTML =
-      `Nejsilnější slot v lize: <strong>${days[top[1]]} ${top[0]}–${top[0]+1} h</strong> (Ø ER ${(top[2]*100).toFixed(2)}%). Zkus sem umístit klíčové posty — důležité highlighty, bilance kola, před-zápasová motivace.`;
+      `Nejsilnější slot na <strong>${platformLabel}</strong>: <strong>${days[top[1]]} ${top[0]}–${top[0]+1} h</strong> (Ø ER ${(top[2]*100).toFixed(2)}%). Zkus sem umístit klíčové posty — highlighty, bilance kola, před-zápasová motivace.`;
+  }
+  function setupTimesFilter() {
+    const buttons = document.querySelectorAll('#times-platform-filters .platform-btn');
+    buttons.forEach((b) => b.addEventListener('click', () => {
+      buttons.forEach((x) => x.classList.remove('active'));
+      b.classList.add('active');
+      bestTimesPlatform = b.dataset.pf || '';
+      drawBestTimes();
+    }));
   }
 
   function renderFormats(data) {
@@ -121,6 +141,7 @@
       renderTopPosts(data);
       renderGrowth(data);
       renderBestTimes(data);
+      setupTimesFilter();
       renderFormats(data);
       renderConsistency(data);
       renderCaption(data);

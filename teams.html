@@ -43,36 +43,64 @@
     </div>
   </section>
 
+  <div class="panel" style="margin-bottom: 16px">
+    <div class="filters" id="period-filters" style="margin: 0">
+      <span style="color: var(--silver); font-size: 12px">Období:</span>
+      <button class="period-btn" data-days="7">7 dní</button>
+      <button class="period-btn active" data-days="30">30 dní</button>
+      <button class="period-btn" data-days="90">90 dní</button>
+      <button class="period-btn" data-days="365">1 rok</button>
+      <button class="period-btn" data-days="all">Vše</button>
+      <span style="margin-left: 16px; color: var(--silver); font-size: 12px">Vlastní:</span>
+      <input type="date" id="period-from">
+      <span style="color: var(--muted)">–</span>
+      <input type="date" id="period-to">
+      <button class="btn ghost" id="apply-custom">Použít</button>
+      <span id="period-info" style="margin-left: auto; color: var(--muted); font-size: 12px"></span>
+    </div>
+  </div>
+
+  <section class="kpi-grid" id="summary-kpis"></section>
+
   <section class="kpi-grid" id="platform-cards"></section>
 
   <section class="grid-2 stack">
-    <div class="panel" style="grid-column: 1 / -1">
-      <div class="panel__head">
-        <div class="panel__title">Vývoj followerů</div>
-        <div class="panel__hint">Po platformách, denní snapshoty</div>
-      </div>
-      <div class="chart tall" id="chart-subs"></div>
-    </div>
-
     <div class="panel">
       <div class="panel__head">
         <div class="panel__title">Top posty týmu</div>
-        <div class="panel__hint">Top 10 dle engagement rate</div>
+        <div class="panel__hint">Filtruj podle platformy, řaď podle libovolného sloupce</div>
+      </div>
+      <div class="filters" style="margin-bottom: 12px">
+        <button class="platform-btn active" data-pf="">Vše</button>
+        <button class="platform-btn" data-pf="ig"><span class="badge ig">Instagram</span></button>
+        <button class="platform-btn" data-pf="fb"><span class="badge fb">Facebook</span></button>
+        <button class="platform-btn" data-pf="tt"><span class="badge tt">TikTok</span></button>
+        <button class="platform-btn" data-pf="yt"><span class="badge yt">YouTube</span></button>
+        <button class="btn" id="export-posts" style="margin-left: auto">Stáhnout posty (CSV)</button>
       </div>
       <div id="top-posts"><div class="empty">Načítám…</div></div>
     </div>
 
     <div class="panel">
       <div class="panel__head">
-        <div class="panel__title">Publikační aktivita (28 d)</div>
-        <div class="panel__hint">Počet postů po platformách a formátu</div>
+        <div class="panel__title">Publikační aktivita</div>
+        <div class="panel__hint">Počet postů po platformách a formátu (vybrané období)</div>
       </div>
       <div class="chart" id="chart-activity"></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Vývoj followerů — po platformách (dynamická Y osa)</div>
+        <div class="panel__hint">Každá platforma zvlášť pro lepší čitelnost menších změn</div>
+      </div>
+      <div class="grid-2" id="follower-charts" style="margin-top: 8px"></div>
     </div>
   </section>
 
   <footer class="footer">
     <div><a href="posts.html" id="all-posts-link">Zobrazit všechny posty tohoto týmu →</a></div>
+    <div><button class="btn ghost" id="export-summary">Stáhnout přehled týmu (CSV)</button></div>
     <div>Data: <a href="https://docs.google.com/spreadsheets/d/1093SfGko3pFZ97vqceYAGPgoNiAIa5q3aSUPJnILH9k/" target="_blank" rel="noopener">Google Sheet</a></div>
   </footer>
 </div>
