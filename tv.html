@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ULLH Social Dashboard — TV sledovanost</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <div class="brand__mark">U</div>
+      <div>
+        <div class="brand__title">ULLH Social Dashboard</div>
+        <div class="brand__subtitle">Univerzitní liga ledního hokeje</div>
+      </div>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Přehled</a>
+      <a href="teams.html">Týmy</a>
+      <a href="posts.html">Posty</a>
+      <a href="inspiration.html">Inspirace</a>
+      <a href="year.html">Rok</a>
+      <a href="tv.html" class="active">TV</a>
+    </nav>
+    <div class="meta" id="meta">—</div>
+  </header>
+
+  <section class="hero">
+    <h1>TV a online sledovanost</h1>
+    <p>Historie ULLH na <strong>ČT sport</strong> (TV kanál, od 2020) a <strong>ČT sport Plus</strong> (online, od 2023). Premiéry a reprízy oddělené. Zdroj TV: ATO – Nielsen / PEM D, zdroj online: Česká televize.</p>
+  </section>
+
+  <section class="kpi-grid" id="kpi-grid"></section>
+
+  <section class="grid-2 stack">
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">ČT sport (TV) — přenosy po letech</div>
+        <div class="panel__hint">Premiéry vs reprízy a automatické reprízy. Přepni metriku přes filtr.</div>
+      </div>
+      <div class="filters" id="tv-filters" style="margin-bottom: 8px">
+        <label>Metrika
+          <select id="tv-metric">
+            <option value="count">Počet přenosů</option>
+            <option value="reach4plus" selected>Reach 4+ (000)</option>
+            <option value="rating000_4plus">Rating 4+ (000)</option>
+            <option value="share4plus">Share 4+</option>
+            <option value="reach15plus">Reach 15+ (000)</option>
+            <option value="reachM15plus">Reach muži 15+ (000)</option>
+            <option value="reachZ15plus">Reach ženy 15+ (000)</option>
+          </select>
+        </label>
+        <label>Pohled
+          <select id="tv-view">
+            <option value="sum" selected>Součet za rok</option>
+            <option value="avg">Průměr na přenos</option>
+            <option value="max">Maximum (rekord)</option>
+          </select>
+        </label>
+      </div>
+      <div class="chart tall" id="chart-tv-yearly"></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Top 10 nejsledovanějších TV přenosů (premiéry)</div>
+        <div class="panel__hint">Reach 4+ (000) — kolik lidí přenos zachytilo živě i v reprízách</div>
+      </div>
+      <div id="tv-top-table"><div class="empty">Načítám…</div></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">ČT sport Plus (online) — přenosy po letech</div>
+        <div class="panel__hint">Provoz na webové platformě, dostupné od ledna 2023</div>
+      </div>
+      <div class="chart tall" id="chart-plus-yearly"></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">Top 10 nejsledovanějších online přenosů</div>
+        <div class="panel__hint">Views živě + odsledované hodiny (web ČT sport Plus)</div>
+      </div>
+      <div id="plus-top-table"><div class="empty">Načítám…</div></div>
+    </div>
+
+    <div class="panel" style="grid-column: 1 / -1">
+      <div class="panel__head">
+        <div class="panel__title">TV vs online — srovnání objemu publika</div>
+        <div class="panel__hint">Reach 4+ na ČT sport (premiéry, levá osa) vs Views živě na ČT sport Plus (pravá osa)</div>
+      </div>
+      <div class="chart tall" id="chart-cross"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>Data updated: <span id="data-updated">—</span></div>
+    <div>Zdroje: <strong>ATO – Nielsen, Česká televize, PEM D</strong> · ČT sport · ČT sport Plus</div>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/metrics.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/tv.js"></script>
+</body>
+</html>
