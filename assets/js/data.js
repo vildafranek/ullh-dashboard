@@ -117,10 +117,25 @@
         download: true,
         header: true,
         skipEmptyLines: true,
-        complete: (res) => resolve(res.data),
+        complete: (res) => {
+          if (!res.data || !res.data.length || !res.data[0] || !Object.keys(res.data[0]).length) {
+            return reject(new Error('Empty or invalid CSV at ' + url));
+          }
+          resolve(res.data);
+        },
         error: reject,
       });
     });
+  }
+
+  async function fetchCsvWithFallback(primary, fallback) {
+    try {
+      return await fetchCsv(primary);
+    } catch (e) {
+      if (!fallback) throw e;
+      console.warn('Primary CSV failed, trying fallback:', e.message);
+      return await fetchCsv(fallback);
+    }
   }
 
   async function load(options = {}) {
@@ -138,8 +153,8 @@
     }
 
     const [accountRaw, postRaw] = await Promise.all([
-      fetchCsv(CFG.csvUrls.account),
-      fetchCsv(CFG.csvUrls.post),
+      fetchCsvWithFallback(CFG.csvUrls.accountLatest, CFG.csvUrls.account),
+      fetchCsvWithFallback(CFG.csvUrls.postLatest, CFG.csvUrls.post),
     ]);
 
     const accounts = accountRaw.map(normalizeAccountRow).filter(Boolean);

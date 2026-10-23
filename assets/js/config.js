@@ -71,7 +71,11 @@ window.ULLH_CONFIG.ligaOnly = window.ULLH_CONFIG.teams.filter((t) => t.kind === 
 window.ULLH_CONFIG.csvUrls = (() => {
   const { publishId, accountGid, postGid } = window.ULLH_CONFIG.source;
   const base = `https://docs.google.com/spreadsheets/d/e/${publishId}/pub`;
+  // Dashboard čte primárně z repa (data/latest/*.csv — tam to tlačí Apps Script v Sheetu).
+  // Fallback: publish-to-web endpoint (až se backend u Google spraví, nebo pro budoucí migraci).
   return {
+    accountLatest: 'data/latest/account.csv',
+    postLatest:    'data/latest/post.csv',
     account: `${base}?output=csv&single=true&gid=${accountGid}`,
     post:    `${base}?output=csv&single=true&gid=${postGid}`,
   };
