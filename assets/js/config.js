@@ -66,6 +66,32 @@ window.ULLH_CONFIG = {
   },
 };
 
+// Carl Creator (čeština) → team slug
+window.ULLH_CONFIG.carlCreatorMap = {
+  'Akademici Plzeň': 'akademici',
+  'ZČU Akademici Plzeň': 'akademici',
+  'BO Ostrava Vítkovice Steel': 'ostrava',
+  'BO Ostrava Vítkovice STEEL - Univerzitní hokejový tým': 'ostrava',
+  'VUT Cavaliers Brno': 'cavaliers',
+  'ČVUT Engineers Prague': 'engineers',
+  'ČVUT Engineers Prague 🦁': 'engineers',
+  'MUNI Bears Brno': 'munibrno',
+  'UJEP North Wings Ústí nad Labem': 'northwings',
+  'Riders Univerzita Pardubice': 'riders',
+  'UNIted HK': 'united',
+  'VŠE Falcons Prague': 'falcons',
+  'VŠE Falcons Prague | University hockey team': 'falcons',
+  'Univerzitní hokej': 'ullh-central',
+  'Hokejový Souboj Univerzit': 'hok-souboj-univ',
+  'Bitva o Prahu': 'bitva-o-prahu',
+  'Bitva o Prahu | 🗓️ 19. 11. 2026': 'bitva-o-prahu',
+  'Bitva o Budějce': 'bitva-o-budejce',
+  'HOKEJOVÁ BITVA O BUDĚJCE': 'bitva-o-budejce',
+  'Východočeské derby univerzit': 'vychodocesky-derby',
+  'Ostravské derby': 'ostravske-derby',
+  'Ostravské hokejové derby': 'ostravske-derby',
+};
+
 window.ULLH_CONFIG.teamsOnly = window.ULLH_CONFIG.teams.filter((t) => t.kind === 'team' || !t.kind);
 window.ULLH_CONFIG.ligaOnly = window.ULLH_CONFIG.teams.filter((t) => t.kind === 'liga');
 
@@ -93,13 +119,20 @@ window.ULLH_CONFIG.teamLookup = (() => {
 })();
 
 window.ULLH_CONFIG.resolveTeam = function (accountName, carlAccountId) {
-  const L = window.ULLH_CONFIG.teamLookup;
+  const CFG = window.ULLH_CONFIG;
+  const L = CFG.teamLookup;
   if (carlAccountId) {
     const prefix = carlAccountId.split('-')[0];
     if (L.byId.has(prefix)) return L.byId.get(prefix);
     if (L.byId.has(carlAccountId)) return L.byId.get(carlAccountId);
   }
   if (accountName) {
+    // Carl Creator string (CZ) lookup
+    const slug = CFG.carlCreatorMap[accountName];
+    if (slug) {
+      const t = CFG.teams.find((x) => x.slug === slug);
+      if (t) return t;
+    }
     const key = accountName.trim().toLowerCase();
     if (L.byName.has(key)) return L.byName.get(key);
     if (L.byName.has('@' + key.replace(/^@/, ''))) return L.byName.get('@' + key.replace(/^@/, ''));

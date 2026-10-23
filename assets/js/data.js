@@ -74,6 +74,7 @@
     }
     const impressions = toNum(row.impressions);
     const views = toNum(row.views);
+    const reach = toNum(row.reach);
     const likes = toNum(row.likes);
     const comments = toNum(row.comments);
     const shares = toNum(row.shares);
@@ -103,6 +104,7 @@
       permalink: row.permalink || '',
       impressions,
       views,
+      reach,
       likes,
       comments,
       shares,
