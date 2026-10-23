@@ -27,7 +27,8 @@ window.ULLH_CONFIG = {
     { kind: 'team', slug: 'united',      name: 'UNIted HK',        short: 'UNI', color: '#3B82F6', logo: 'assets/img/teams/united.png',      accountIds: ['bfe6cc29','b18c071b','7e062517'], accountNames: ['@unitedhk','@united_hk'] },
     { kind: 'team', slug: 'falcons',     name: 'VŠE Falcons',      short: 'FAL', color: '#22D3EE', logo: 'assets/img/teams/falcons.png',     accountIds: ['709fceba'], accountNames: ['vsefalcons','@vsefalcons'] },
 
-    { kind: 'liga', slug: 'ullh-central',       name: 'ULLH centrální',        short: 'ULH', color: '#00D4FF', accountIds: ['01b45180','1e114592'], accountNames: ['@univerzitnihokej'] },
+    { kind: 'liga', slug: 'ullh-central',       name: 'ULLH centrální',        short: 'ULH', color: '#00D4FF', accountIds: ['01b45180','1e114592','01c88cf9'], accountNames: ['@univerzitnihokej','universitynihokej'] },
+    { kind: 'liga', slug: 'ostravske-derby',    name: 'Ostravské derby',       short: 'OSD', color: '#F97316', accountIds: ['9c28199c','2b78b43b'], accountNames: ['ostravskederby'] },
     { kind: 'liga', slug: 'derby-uni',          name: 'Derby univerzit',       short: 'DRB', color: '#38BDF8', accountIds: ['be83cfc5'],          accountNames: ['@derbyuniverzit'] },
     { kind: 'liga', slug: 'bitva-o-prahu',      name: 'Bitva o Prahu',         short: 'BOP', color: '#818CF8', accountIds: ['d7c8aa06','75e0f41f'], accountNames: ['@bitvaoprahu'] },
     { kind: 'liga', slug: 'bitva-o-budejce',    name: 'Bitva o Budějce',       short: 'BOB', color: '#F472B6', accountIds: ['f977c0af'],          accountNames: ['@bitva_o_budejce'] },
