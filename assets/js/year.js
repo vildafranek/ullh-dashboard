@@ -106,6 +106,11 @@
     const totalStoriesViews = M.sumStoriesViews(teamPostsAll);
     const totalReach = totalReachAllAccounts(data);
     const seasonPostReach = sumPostReachSeason(data);
+    const reach28 = (() => {
+      const md = M.maxDate([...data.accounts, ...data.posts]);
+      const from = M.addDays(md, -28);
+      return teamPostsAll.reduce((s, p) => (p.date >= from && p.date <= md ? s + (p.reach || 0) : s), 0);
+    })();
     const avgPostsPerDay = (() => {
       const dates = teamPostsAll.map((p) => p.day);
       const unique = new Set(dates);
@@ -136,7 +141,7 @@
       label: 'Celkem dosah (sezóna)',
       value: M.formatNumber(seasonPostReach || totalReach, { compact: true }),
       sub: seasonPostReach
-        ? `Kumulativní reach všech postů za sezónu (Carl per-post data). Posledních 28 dní snapshot: ${M.formatNumber(totalReach, { compact: true })}.`
+        ? `Kumulativní reach všech postů za sezónu (Carl per-post data). Posledních 28 dní: ${M.formatNumber(reach28, { compact: true })}.`
         : 'Posledních 28 dní — klouzavý snapshot (per-post reach zatím není v datech)',
     }));
     grid.appendChild(kpi({

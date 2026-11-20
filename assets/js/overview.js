@@ -57,7 +57,7 @@
       label: 'Dosah (reach, 28 d)',
       value: M.formatNumber(totals.reach, { compact: true }),
       delta: reachDeltaPct,
-      sub: 'Unikátní účty zasažené obsahem &middot; klouzavé okno 28 dní, poslední snapshot. Δ vs. stav před 7 dny.',
+      sub: 'Součet dosahu všech postů za posledních 28 dní (Carl). Člověk, který viděl víc postů, se počítá víckrát. Δ vs. předchozích 28 dní.',
     }));
     grid.appendChild(kpiCard({
       label: `Zhlédnutí za ${totals.windowDays} dní`,

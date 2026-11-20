@@ -253,8 +253,13 @@
       storiesViews: sumStoriesViews(windowPosts),
       posts: windowPosts.length,
       postsPrev: prevPosts.length,
-      reach: reachLatestPerAccount(data.accounts, { kind, onDate: md }),
-      reachPrev: reachLatestPerAccount(data.accounts, { kind, onDate: from }),
+      // Dosah = součet reach postů za posledních 28 dní (Carl per-post), Δ vs. předchozích 28 dní.
+      // (Účtový 28denní reach ze Supermetrics od 23. 10. 2026 nechodí.)
+      ...(() => {
+        const rFrom = addDays(md, -28), rPrevFrom = addDays(md, -56);
+        const sumR = (a, b) => data.posts.reduce((s, p) => (p.team && slugs.has(p.team) && p.date >= a && p.date < b ? s + (p.reach || 0) : s), 0);
+        return { reach: sumR(rFrom, new Date(+md + 1)), reachPrev: sumR(rPrevFrom, rFrom), reachDays: 28 };
+      })(),
       fastestGrowing: leaderboard(data, { kind: kind === 'liga' ? 'liga' : 'team', windowDays })
         .slice().sort((a, b) => b.subsDelta - a.subsDelta)[0],
     };
