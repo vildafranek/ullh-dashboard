@@ -23,6 +23,12 @@
     return new Date(m || Date.now());
   }
 
+  // Lokální (CZ) klíč dne YYYY-MM-DD — stejný formát jako r.day v data.js. toISOString() by posunul půlnoc do předchozího dne (UTC).
+  function localDayKey(date) {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
   function addDays(date, n) {
     const d = new Date(date);
     d.setDate(d.getDate() + n);
@@ -92,7 +98,7 @@
   }
 
   function subsSumOnDay(accounts, teamSlug, targetDate) {
-    const tKey = targetDate.toISOString().slice(0, 10);
+    const tKey = localDayKey(targetDate);
     const byAccountAt = new Map();
     const earliestPerAccount = new Map();
     for (const r of accounts) {
@@ -151,7 +157,7 @@
   function reachLatestPerAccount(accounts, { kind = 'all', onDate = null } = {}) {
     const source = kind === 'liga' ? CFG.ligaOnly : (kind === 'team' ? CFG.teamsOnly : CFG.teams);
     const slugs = new Set(source.map((t) => t.slug));
-    const tKey = onDate ? onDate.toISOString().slice(0, 10) : null;
+    const tKey = onDate ? localDayKey(onDate) : null;
     const byAccount = new Map();
     for (const r of accounts) {
       if (!r.team || !slugs.has(r.team)) continue;
@@ -418,7 +424,7 @@
 
   window.ULLHMetrics = {
     seasonOf,
-    maxDate, addDays, formatNumber, formatDelta,
+    maxDate, addDays, localDayKey, formatNumber, formatDelta,
     latestSubs, subsByDate, currentSubsSumByTeam, subsSumOnDay, subsGrowth,
     postsInWindow, avgEr, sumEngagement, sumImpressions, sumViews,
     sumStoriesViews, reachLatestPerAccount,

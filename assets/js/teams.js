@@ -175,7 +175,7 @@
       }
       const subs = latest.subs;
       const rowsAll = state.data.accounts.filter((r) => r.team === state.team.slug && r.platform === meta.key);
-      const rowsBefore = rowsAll.filter((r) => r.day <= from.toISOString().slice(0, 10));
+      const rowsBefore = rowsAll.filter((r) => r.day <= M.localDayKey(from));
       const before = rowsBefore.length
         ? rowsBefore.reduce((a, b) => a.date > b.date ? a : b).subs
         : (rowsAll.length ? rowsAll.reduce((a, b) => a.date < b.date ? a : b).subs : subs);

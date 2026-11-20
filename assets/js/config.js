@@ -21,7 +21,7 @@ window.ULLH_CONFIG = {
     { kind: 'team', slug: 'engineers',   name: 'Engineers ČVUT',   short: 'ENG', color: '#F59E0B', logo: 'assets/img/teams/engineers.png',   accountIds: ['afd06d1d','11963a07'], accountNames: ['@engineersprague','@cvutengineers'] },
     { kind: 'team', slug: 'munibrno',    name: 'HC MUNI',          short: 'MUN', color: '#10B981', logo: 'assets/img/teams/hc-muni.png',     accountIds: ['d1f9e9f9','43cd62c8'], accountNames: ['@hcmuni','@hc_muni'] },
     { kind: 'team', slug: 'hsubrno',     name: 'HSU Brno',         short: 'HSU', color: '#14B8A6', accountIds: ['86b4295e'], accountNames: ['@hsubrno'] },
-    { kind: 'team', slug: 'northwings',  name: 'North Wings',      short: 'NOW', color: '#64748B', logo: 'assets/img/teams/north-wings.png', accountIds: ['2b08a479'], accountNames: ['@hcnorthwings'] },
+    { kind: 'team', slug: 'northwings',  name: 'North Wings',      short: 'NOW', color: '#64748B', logo: 'assets/img/teams/north-wings.png', accountIds: ['2b08a479','62a7e085'], accountNames: ['@hcnorthwings'] },
     { kind: 'team', slug: 'olomouc',     name: 'HC UP Olomouc',    short: 'OLM', color: '#FACC15', accountIds: ['2ade9992','2d87eafd'], accountNames: ['@hcupolomouc'] },
     { kind: 'team', slug: 'riders',      name: 'Riders Pardubice', short: 'RID', color: '#E11D48', logo: 'assets/img/teams/riders.png',      accountIds: ['f99ed6c3','4d6a67ab'], accountNames: ['@riderspardubice'] },
     { kind: 'team', slug: 'united',      name: 'UNIted HK',        short: 'UNI', color: '#3B82F6', logo: 'assets/img/teams/united.png',      accountIds: ['bfe6cc29','b18c071b','7e062517'], accountNames: ['@unitedhk','@united_hk'] },
@@ -128,7 +128,11 @@ window.ULLH_CONFIG.resolveTeam = function (accountName, carlAccountId) {
   }
   if (accountName) {
     // Carl Creator string (CZ) lookup
-    const slug = CFG.carlCreatorMap[accountName];
+    // Case-insensitive (Carl někdy vrací jméno účtu velkými písmeny, např. „UJEP NORTH WINGS…“)
+    if (!CFG._creatorMapLc) {
+      CFG._creatorMapLc = new Map(Object.entries(CFG.carlCreatorMap).map(([k, v]) => [k.normalize('NFC').toLowerCase(), v]));
+    }
+    const slug = CFG.carlCreatorMap[accountName] || CFG._creatorMapLc.get(accountName.normalize('NFC').trim().toLowerCase());
     if (slug) {
       const t = CFG.teams.find((x) => x.slug === slug);
       if (t) return t;
